@@ -1,25 +1,25 @@
 {
     "format_version": 2,
-    "tooth": "my-mod",
-    "version": "0.0.0",
+    "tooth": "github.com/zimuya4153/vanish",
+    "version": "2.0.0",
     "info": {
-        "name": "My Mod Name",
-        "description": "My Mod Description",
-        "author": "My Name",
+        "name": "vanish",
+        "description": "隐身插件，帮助管理员查服。",
+        "author": "小小的子沐呀",
+        "source": "github.com/zimuya4153/vanish",
         "tags": [
-            "levilamina",
-            "mod"
+            "levilamina"
         ]
     },
-    "asset_url": "My Asset Url",
+    "asset_url": "https://github.com/zimuya4153/vanish/releases/download/v2.0.0/vanish-windows-x64.zip",
     "prerequisites": {
-        "github.com/LiteLDev/LeviLamina": "My LeviLamina Dependency Version"
+        "github.com/LiteLDev/LeviLamina": ">=0.13.4"
     },
     "files": {
         "place": [
             {
-                "src": "my-mod/*",
-                "dest": "plugins/my-mod/"
+                "src": "vanish/*",
+                "dest": "plugins/vanish/"
             }
         ]
     }

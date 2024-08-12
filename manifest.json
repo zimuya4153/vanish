@@ -1,6 +1,18 @@
 {
     "name": "${modName}",
     "entry": "${modFile}",
-    "version": "${modVersion}",
-    "type": "native"
+    "version": "2.0.0",
+    "type": "native",
+    "author": "小小的子沐呀 QQ:1756150362",
+    "description": "普通的隐身插件",
+    "optionalDependencies": [
+        {
+            "name": "GMLIB"
+        }
+    ],
+    "extraInfo": {
+        "github": "https://github.com/zimuya4153/vanish",
+        "minebbs": "https://www.minebbs.com/resources/vanish.8652/",
+        "originalAuthor": "种子 QQ:3509270136"
+    }
 }

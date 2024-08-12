@@ -1,6 +1,43 @@
-# Changelog
+# 更新日志
 
-All notable changes to this project will be documented in this file.
+- 2.0.0
+  - `GMLIB`插件改为可选插件
+  - 修复切换维度后`boss栏`消失
+  - 支持卸载插件
+  - 隐藏皮肤切换/睡觉/死亡信息提示显示
+  - 修复切换维度bossbar消失问题
+  - 隐藏服务器信息玩家真实数量
+  - 修复睡觉问题
+  - 修复经验球会追踪隐身玩家的问题
+  - 修复了隐身后生存模式会吸引怪物仇恨的问题
+  - 修复了目标选择器可以选择隐身玩家的问题
+  - 增加隐身菜单GUI
+  - 支持设置隐身的后的功能
+    - 解除隐身后提示加入游戏
+    - 隐身Boss栏文本
+    - 隐身后提示退出游戏
+    - 隐身后禁止拿取物品
+    - 隐身后禁止丢出物品
+  - `重构插件`
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+- 1.2.0
+  - 添加了PAPI变量
+    - `vanish_vanishCount` - 隐身玩家数量
+    - `vanish_invisibleCount` - 未隐身玩家数量
+    - `vanish_isVanish` - 玩家是否正在隐身
+  - 导出更多接口
+    - `getInvisiblePlayers` - 获取所有未隐身的玩家的玩家对象
+    - `getVanishCount` - 获取隐身玩家数量
+    - `getInvisibleCount` - 获取未隐身玩家数量
+
+- 1.1.0
+  - 支持隐藏箱子，潜影盒，木桶的开/关音效和动画
+  - 支持隐藏地图显示
+  - 支持隐藏移动音效
+  - 支持隐藏list命令显示
+  - 支持隐藏掉落到方块上音效
+  - 修复切换游戏模式问题
+
+- 1.0.1
+  - 修复导致`mc.broadcast`接口的报错问题
+  - 修复关闭`boss栏`后，重进服务器`boss栏`依旧显示的问题
