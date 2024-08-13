@@ -406,6 +406,28 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
     return config.playerConfigs[((Player*)this)->getUuid()].enabled;
 }
 
+// 设置实体隐身
+LL_AUTO_TYPE_INSTANCE_HOOK(
+    SetPlayerInvisibleHook,
+    ll::memory::HookPriority::Normal,
+    Actor,
+    "?setInvisible@Actor@@QEAAX_N@Z",
+    void,
+    bool value
+) {
+    if (!isType(ActorType::Player)) return origin(value);
+    auto attachPos = getAttachPos(ActorLocation::Body);
+    playSynchronizedSound(
+        value ? Puv::Legacy::LevelSoundEvent::Disappeared : Puv::Legacy::LevelSoundEvent::Reappeared,
+        attachPos,
+        1,
+        false
+    );
+    (*(void(__fastcall**)(Actor*, __int64, uint64_t))(*(uint64_t*)this + 8i64))(this, 14i64, (unsigned __int8)value);
+    (*(__int64(__fastcall**)(Actor*, __int64, uint64_t))(*(uint64_t*)this + 8i64))(this, 5i64, value);
+    return;
+}
+
 // 玩家进服
 LL_AUTO_TYPE_INSTANCE_HOOK(
     PlayerJoinHook,
@@ -437,7 +459,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 ) {
     if (auto level = ll::service::getLevel()) {
         auto* entity = level->fetchEntity(mEntityID);
-        if (entity && entity->hasCategory(ActorCategory::Player)
+        if (entity && entity->isType(ActorType::Player)
             && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled) {
             mEntityID         = ActorUniqueID();
             mEntityType       = ActorType::None;
@@ -461,7 +483,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 ) {
     if (auto level = ll::service::getLevel()) {
         auto* entity = level->fetchEntity(mEntityID);
-        if (entity && entity->hasCategory(ActorCategory::Player)
+        if (entity && entity->isType(ActorType::Player)
             && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled) {
             mDamagingActorId         = ActorUniqueID();
             mDamagingActorType       = ActorType::None;
