@@ -500,7 +500,8 @@ struct RNS2_SendParameters {
     RakNet::SystemAddress system_address;
     int                   ttl;
 };
-// Motd伪造 摘抄自 https://github.com/EndstoneMC/endstone/blob/main/src/endstone_runtime/bedrock/deps/raknet/raknet_socket2.cpp
+// Motd伪造 摘抄自
+// https://github.com/EndstoneMC/endstone/blob/main/src/endstone_runtime/bedrock/deps/raknet/raknet_socket2.cpp
 LL_AUTO_TYPE_STATIC_HOOK(
     MotdCounterfeit,
     ll::memory::HookPriority::Normal,
@@ -520,8 +521,6 @@ LL_AUTO_TYPE_STATIC_HOOK(
             std::size_t          strlen    = data[head_size] << 8 | data[head_size + 1];
             if (strlen != 0 && level.has_value()) {
                 std::string ping_response{data + head_size + 2, strlen};
-                char        buffer[64];
-                sendParameters->system_address.ToString(false, buffer, '|');
                 std::istringstream       iss(ping_response);
                 std::string              tmp;
                 std::vector<std::string> parts;
@@ -547,6 +546,7 @@ LL_AUTO_TYPE_STATIC_HOOK(
                 packet.insert(packet.end(), new_ping_response.begin(), new_ping_response.end());
                 sendParameters->data   = packet.data();
                 sendParameters->length = static_cast<int>(packet.size());
+                return origin(rns2Socket, sendParameters, file, line);
             }
         }
     } catch (...) {}
