@@ -52,7 +52,7 @@ std::optional<mce::UUID> getUuid(ActorRuntimeID const& runtimeId) {
 }
 
 // 玩家create包
-LL_AUTO_TYPE_INSTANCE_HOOK(TryCreateActorPacketHook, ll::memory::HookPriority::Normal, Player, "?tryCreateAddActorPacket@Player@@UEAA?AV?$unique_ptr@VAddActorBasePacket@@U?$default_delete@VAddActorBasePacket@@@std@@@std@@XZ", std::unique_ptr<AddActorBasePacket>) {
+LL_TYPE_INSTANCE_HOOK(TryCreateActorPacketHook, ll::memory::HookPriority::Normal, Player, "?tryCreateAddActorPacket@Player@@UEAA?AV?$unique_ptr@VAddActorBasePacket@@U?$default_delete@VAddActorBasePacket@@@std@@@std@@XZ", std::unique_ptr<AddActorBasePacket>) {
     if (config.playerConfigs[getUuid()].enabled) {
         return nullptr;
     }
@@ -60,7 +60,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(TryCreateActorPacketHook, ll::memory::HookPriority::N
 }
 
 // 发送数据包给客户端
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     SendBroadcastHook,
     ll::memory::HookPriority::Normal,
     LoopbackPacketSender,
@@ -84,7 +84,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
     origin(exceptId, exceptSubid, packet);
 }
 // 发送数据包给所有客户端
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     SendBroadcastHook2,
     ll::memory::HookPriority::Normal,
     LoopbackPacketSender,
@@ -107,7 +107,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // list变化
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     PlayerListPacketHook,
     ll::memory::HookPriority::High,
     PlayerListPacket,
@@ -124,7 +124,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 移动音效
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     PlayActorMovementSoundHook,
     ll::memory::HookPriority::Normal,
     Actor,
@@ -140,7 +140,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 同步声音
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     PlayActorSynchronizedSoundHook,
     ll::memory::HookPriority::Normal,
     Actor,
@@ -160,7 +160,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 掉落到方块上声音
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     OnActorFallOnHook,
     ll::memory::HookPriority::Normal,
     Block,
@@ -180,7 +180,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 命令返回结果
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     AddCommandMessageHook,
     ll::memory::HookPriority::Normal,
     CommandOutput,
@@ -215,7 +215,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 修复玩家切换游戏模式问题
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     FixChangGameModeBugHook,
     ll::memory::HookPriority::Normal,
     Player,
@@ -232,13 +232,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 地图是否显示玩家
-LL_AUTO_TYPE_INSTANCE_HOOK(
-    CanBeSeenOnMapHook,
-    ll::memory::HookPriority::Normal,
-    Player,
-    &Player::canBeSeenOnMap,
-    bool
-) {
+LL_TYPE_INSTANCE_HOOK(CanBeSeenOnMapHook, ll::memory::HookPriority::Normal, Player, &Player::canBeSeenOnMap, bool) {
     if (config.playerConfigs[getUuid()].enabled) {
         return false;
     }
@@ -246,7 +240,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 玩家打开箱子
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     StartOpenChestHook,
     ll::memory::HookPriority::Normal,
     ChestBlockActor,
@@ -261,7 +255,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 玩家关闭箱子
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     StopOpenChestHook,
     ll::memory::HookPriority::Normal,
     ChestBlockActor,
@@ -276,7 +270,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 玩家打开潜影盒
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     StartOpenShulkerBoxHook,
     ll::memory::HookPriority::Normal,
     ShulkerBoxBlockActor,
@@ -291,7 +285,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 玩家关闭潜影盒
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     StopOpenShulkerBoxHook,
     ll::memory::HookPriority::Normal,
     ShulkerBoxBlockActor,
@@ -306,7 +300,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 玩家打开木桶
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     StartOpenBarrelHook,
     ll::memory::HookPriority::Normal,
     BarrelBlockActor,
@@ -321,7 +315,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 玩家关闭木桶
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     StopOpenBarrelHook,
     ll::memory::HookPriority::Normal,
     BarrelBlockActor,
@@ -336,7 +330,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 玩家切换维度
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     PlayerChangeDimensionHook,
     HookPriority::Normal,
     Level,
@@ -353,7 +347,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 玩家能否睡觉
-LL_AUTO_TYPE_INSTANCE_HOOK(PlayerCanSleepHook, ll::memory::HookPriority::Normal, Player, &Player::canSleep, bool) {
+LL_TYPE_INSTANCE_HOOK(PlayerCanSleepHook, ll::memory::HookPriority::Normal, Player, &Player::canSleep, bool) {
     if (config.playerConfigs[getUuid()].enabled) {
         return false;
     }
@@ -361,7 +355,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(PlayerCanSleepHook, ll::memory::HookPriority::Normal,
 }
 
 // 玩家捡起物品
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     PlayerPickUpItemHook,
     HookPriority::Normal,
     Player,
@@ -379,7 +373,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 玩家丢出物品
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     PlayerDropItemHook,
     HookPriority::Normal,
     Player,
@@ -395,7 +389,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 实体是否隐身
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     PlayerIsInvisible,
     ll::memory::HookPriority::Normal,
     Actor,
@@ -407,7 +401,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 设置实体隐身
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     SetPlayerInvisibleHook,
     ll::memory::HookPriority::Normal,
     Actor,
@@ -429,7 +423,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 玩家进服
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     PlayerJoinHook,
     HookPriority::Normal,
     ServerPlayer,
@@ -445,7 +439,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 
 // 生物死亡信息
 using DEATH_MESSAGE = std::pair<std::string, std::vector<std::string>>;
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     ActorDamageByActorSourceHook,
     HookPriority::Normal,
     ActorDamageByActorSource,
@@ -469,7 +463,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
     }
     return origin(deadName, dead);
 }
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     ActorDamageByChildActorSourceHook,
     HookPriority::Normal,
     ActorDamageByChildActorSource,
@@ -502,7 +496,7 @@ struct RNS2_SendParameters {
 };
 // Motd伪造 摘抄自
 // https://github.com/EndstoneMC/endstone/blob/main/src/endstone_runtime/bedrock/deps/raknet/raknet_socket2.cpp
-LL_AUTO_TYPE_STATIC_HOOK(
+LL_TYPE_STATIC_HOOK(
     MotdCounterfeit,
     ll::memory::HookPriority::Normal,
     RakNet::RNS2_Windows_Linux_360,
@@ -520,7 +514,7 @@ LL_AUTO_TYPE_STATIC_HOOK(
             const char*          data      = sendParameters->data;
             std::size_t          strlen    = data[head_size] << 8 | data[head_size + 1];
             if (strlen != 0 && level.has_value()) {
-                std::string ping_response{data + head_size + 2, strlen};
+                std::string              ping_response{data + head_size + 2, strlen};
                 std::istringstream       iss(ping_response);
                 std::string              tmp;
                 std::vector<std::string> parts;
@@ -554,7 +548,7 @@ LL_AUTO_TYPE_STATIC_HOOK(
 }
 
 // 实体设置目标(如仇恨)
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     ActorIsValidTargetHook,
     ll::memory::HookPriority::Normal,
     Actor,
@@ -570,7 +564,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 目标选择器
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     CommandSelectorHook,
     ll::memory::HookPriority::Normal,
     CommandSelectorBase,
@@ -595,7 +589,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 获取最近的玩家
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     FetchNearestPlayerHook,
     ll::memory::HookPriority::Normal,
     Dimension,
@@ -614,7 +608,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 thread_local bool intercept = false;
 
 // 玩家使用物品
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     UseTimeDepletedHook,
     ll::memory::HookPriority::Normal,
     ItemStack,
@@ -630,7 +624,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 广播声音
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     broadcastSoundEventHook,
     ll::memory::HookPriority::Normal,
     Level,
@@ -649,7 +643,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 广播声音
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     broadcastSoundEventHook2,
     ll::memory::HookPriority::Normal,
     Level,
@@ -668,7 +662,7 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
 }
 
 // 广播声音
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     broadcastSoundEventHook3,
     ll::memory::HookPriority::Normal,
     Level,
@@ -685,3 +679,44 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
     if (intercept) return;
     origin(region, type, pos, block, entityType, isBabyMob, isGlobal);
 }
+
+auto getAllHooks() {
+    return ll::memory::HookRegistrar<
+        TryCreateActorPacketHook,
+        SendBroadcastHook,
+        SendBroadcastHook2,
+        PlayerListPacketHook,
+        PlayActorMovementSoundHook,
+        PlayActorSynchronizedSoundHook,
+        OnActorFallOnHook,
+        AddCommandMessageHook,
+        FixChangGameModeBugHook,
+        CanBeSeenOnMapHook,
+        StartOpenChestHook,
+        StopOpenChestHook,
+        StartOpenShulkerBoxHook,
+        StopOpenShulkerBoxHook,
+        StartOpenBarrelHook,
+        StopOpenBarrelHook,
+        PlayerChangeDimensionHook,
+        PlayerCanSleepHook,
+        PlayerPickUpItemHook,
+        PlayerDropItemHook,
+        PlayerIsInvisible,
+        SetPlayerInvisibleHook,
+        PlayerJoinHook,
+        ActorDamageByActorSourceHook,
+        ActorDamageByChildActorSourceHook,
+        MotdCounterfeit,
+        ActorIsValidTargetHook,
+        CommandSelectorHook,
+        FetchNearestPlayerHook,
+        UseTimeDepletedHook,
+        broadcastSoundEventHook,
+        broadcastSoundEventHook2,
+        broadcastSoundEventHook3>();
+}
+
+void loadAllHook() { getAllHooks().hook(); }
+
+void unloadAllHook() { getAllHooks().unhook(); }

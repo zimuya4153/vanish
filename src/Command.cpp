@@ -1,22 +1,24 @@
 #pragma once
 
-#include "Global.h"
 #include "Entry.h"
+#include "Global.h"
 
 #include <ll/api/Config.h>
 #include <ll/api/command/CommandHandle.h>
 #include <ll/api/command/CommandRegistrar.h>
 #include <ll/api/form/CustomForm.h>
 #include <mc/entity/utilities/ActorType.h>
-#include <mc/server/commands/CommandSelector.h>
 #include <mc/server/commands/CommandOrigin.h>
 #include <mc/server/commands/CommandOutput.h>
 #include <mc/server/commands/CommandPermissionLevel.h>
-
+#include <mc/server/commands/CommandSelector.h>
 
 void registerCommands() {
-    auto& cmd = ll::command::CommandRegistrar::getInstance()
-                    .getOrCreateCommand(config.command, "隐身", config.permMode ? CommandPermissionLevel::Any : CommandPermissionLevel::GameDirectors);
+    auto& cmd = ll::command::CommandRegistrar::getInstance().getOrCreateCommand(
+        config.command,
+        "隐身",
+        config.permMode ? CommandPermissionLevel::Any : CommandPermissionLevel::GameDirectors
+    );
     if (!config.alias.empty()) {
         cmd.alias(config.alias);
     }
@@ -29,7 +31,9 @@ void registerCommands() {
         if (entity == nullptr || !entity->isType(ActorType::Player)) {
             return output.error("非玩家不可执行");
         }
-        if (config.permMode && std::count(config.permPlayers.begin(), config.permPlayers.end(), static_cast<Player*>(entity)->getUuid()) == 0){
+        if (config.permMode
+            && std::count(config.permPlayers.begin(), config.permPlayers.end(), static_cast<Player*>(entity)->getUuid())
+                   == 0) {
             return output.error("您没有权限使用该命令");
         }
         auto* player       = static_cast<Player*>(entity);

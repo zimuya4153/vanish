@@ -24,6 +24,7 @@ void setPlayerBossbar(Player& player, bool enabled) {
     if (enabled) {
         // 创建bossbar需要的假实体
         if (!ll::service::getLevel()->fetchEntity(ActorUniqueID(config.bossbarID))) {
+            // 摘抄至https://github.com/GroupMountain/GMLIB/blob/main/src/Server/BinaryStreamAPI.cc
             BinaryStream addActorBinaryStream;
             addActorBinaryStream.writeUnsignedVarInt(
                 ((int)MinecraftPacketIds::AddActor & 0x3FF) | (((uchar)player.getClientSubId() & 3) << 10)
@@ -79,10 +80,10 @@ void setPlayerBossbar(Player& player, bool enabled) {
 
 void setPlayerVanishConfig(mce::UUID& uuid, Vanish::PlayerConfig playerConfig) {
     auto oldPlayerConfig = config.playerConfigs[uuid];
-    auto level = ll::service::getLevel();
+    auto level           = ll::service::getLevel();
     if (!level.has_value()) return;
-    auto* player = level->getPlayer(uuid);
-    auto* packetSender = static_cast<LoopbackPacketSender*>(level->getPacketSender());
+    auto* player               = level->getPlayer(uuid);
+    auto* packetSender         = static_cast<LoopbackPacketSender*>(level->getPacketSender());
     config.playerConfigs[uuid] = playerConfig;
     ll::config::saveConfig(config, Vanish::Entry::getInstance().getSelf().getConfigDir() / "config.json");
     if (player == nullptr) return;
@@ -90,9 +91,7 @@ void setPlayerVanishConfig(mce::UUID& uuid, Vanish::PlayerConfig playerConfig) {
         // 移除玩家实体
         auto removePlayerPacket = RemoveActorPacket(ActorUniqueID(player->getOrCreateUniqueID()));
         level->forEachPlayer([&removePlayerPacket, &player](Player& player2) -> bool {
-            if (*player != player2) {
-                removePlayerPacket.sendTo(player2);
-            }
+            if (*player != player2) removePlayerPacket.sendTo(player2);
             return true;
         });
 
@@ -115,9 +114,7 @@ void setPlayerVanishConfig(mce::UUID& uuid, Vanish::PlayerConfig playerConfig) {
         // 添加玩家实体
         auto addPlayerPacket = player->tryCreateAddActorPacket();
         level->forEachPlayer([&addPlayerPacket, &player](Player& player2) -> bool {
-            if (*player != player2) {
-                addPlayerPacket->sendTo(player2);
-            }
+            if (*player != player2) addPlayerPacket->sendTo(player2);
             return true;
         });
 
