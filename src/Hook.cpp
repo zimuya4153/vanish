@@ -8,6 +8,7 @@
 #include <mc/deps/raknet/SystemAddress.h>
 #include <mc/network/ServerNetworkHandler.h>
 #include <mc/network/packet/AddActorBasePacket.h>
+#include <mc/network/packet/PlayerActionPacket.h>
 #include <mc/network/packet/PlayerListPacket.h>
 #include <mc/network/packet/SetPlayerGameTypePacket.h>
 #include <mc/network/packet/TextPacket.h>
@@ -680,6 +681,23 @@ LL_TYPE_INSTANCE_HOOK(
     origin(region, type, pos, block, entityType, isBabyMob, isGlobal);
 }
 
+// 处理玩家动作
+LL_TYPE_INSTANCE_HOOK(
+    HandlerPlayerActionPacketHook,
+    ll::memory::HookPriority::Normal,
+    ServerNetworkHandler,
+    &ServerNetworkHandler::handle,
+    void,
+    NetworkIdentifier const&  source,
+    PlayerActionPacket const& packet
+) {
+    if (auto player = getServerPlayer(source, packet.mClientSubId)) {
+        if (config.playerConfigs[player->getUuid()].enabled) intercept = true;
+    }
+    origin(source, packet);
+    intercept = false;
+}
+
 auto getAllHooks() {
     return ll::memory::HookRegistrar<
         TryCreateActorPacketHook,
@@ -714,7 +732,8 @@ auto getAllHooks() {
         UseTimeDepletedHook,
         broadcastSoundEventHook,
         broadcastSoundEventHook2,
-        broadcastSoundEventHook3>();
+        broadcastSoundEventHook3,
+        HandlerPlayerActionPacketHook>();
 }
 
 void loadAllHook() { getAllHooks().hook(); }
