@@ -24,7 +24,7 @@ bool Entry::load() {
     } catch (...) {
         ll::config::saveConfig(config, path);
     }
-    logger.info(fmt::format(fmt::fg(fmt::color::pink), "插件已加载   版本:v{}", VERSION.to_string()));
+    logger.info(fmt::format(fmt::fg(fmt::color::pink), "模组 vanish-v{} 已加载！", VERSION.to_string()));
     logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "[load] 喵~"));
     return true;
 }
@@ -35,10 +35,10 @@ bool Entry::enable() {
     if (config.enabledPAPI) registerPAPI();
     logger.info(fmt::format(
         fmt::fg(fmt::color::aqua),
-        "欢迎使用隐身插件，如有问题，请加Q群(985991178)反馈或前往github提交issues。"
+        "欢迎使用隐身模组，如有问题，请加Q群(985991178)反馈或前往github提交issues。"
     ));
     logger.info(fmt::format(fmt::fg(fmt::color::yellow), "Github地址: {}", "https://github.com/zimuya4153/vanish"));
-    logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "[enable] 隐身插件启动，嗷呜~~~"));
+    logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "[enable] 隐身模组启动，嗷呜~~~"));
     return true;
 }
 

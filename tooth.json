@@ -1,7 +1,7 @@
 {
     "format_version": 2,
     "tooth": "github.com/zimuya4153/vanish",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "info": {
         "name": "vanish",
         "description": "隐身插件，帮助管理员查服。",
@@ -11,7 +11,7 @@
             "levilamina"
         ]
     },
-    "asset_url": "https://github.com/zimuya4153/vanish/releases/download/v2.0.0/vanish-windows-x64.zip",
+    "asset_url": "https://github.com/zimuya4153/vanish/releases/download/v2.0.1/vanish-windows-x64.zip",
     "prerequisites": {
         "github.com/LiteLDev/LeviLamina": ">=0.13.4"
     },

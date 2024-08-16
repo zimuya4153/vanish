@@ -5,7 +5,7 @@
 #include <ll/api/Logger.h>
 #include <ll/api/data/Version.h>
 
-#define VERSION ll::data::Version(2, 0, 0)
+#define VERSION ll::data::Version(2, 0, 1)
 #define logger  ll::Logger("vanish")
 
 extern Vanish::Config config;
