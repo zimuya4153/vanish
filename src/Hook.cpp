@@ -9,6 +9,7 @@
 #include <mc/deps/raknet/SystemAddress.h>
 #include <mc/network/ServerNetworkHandler.h>
 #include <mc/network/packet/AddActorBasePacket.h>
+#include <mc/network/packet/InventorySlotPacket.h>
 #include <mc/network/packet/PlayerActionPacket.h>
 #include <mc/network/packet/PlayerListPacket.h>
 #include <mc/network/packet/SetPlayerGameTypePacket.h>
@@ -27,6 +28,10 @@
 #include <mc/world/actor/player/Player.h>
 #include <mc/world/actor/player/PlayerListPacketType.h>
 #include <mc/world/actor/player/ServerPlayerBlockUseHandler.h>
+#include <mc/world/containers/ContainerID.h>
+#include <mc/world/inventory/network/ItemStackRequestAction.h>
+#include <mc/world/inventory/network/ItemStackRequestActionHandler.h>
+#include <mc/world/inventory/transaction/ComplexInventoryTransaction.h>
 #include <mc/world/level/BlockSource.h>
 #include <mc/world/level/Level.h>
 #include <mc/world/level/LevelEventManager.h>
@@ -39,6 +44,7 @@
 #include <mc/world/phys/AABB.h>
 #include <optional>
 #include <vector>
+
 
 thread_local bool intercept = false;
 
@@ -377,16 +383,44 @@ LL_TYPE_INSTANCE_HOOK(
 LL_TYPE_INSTANCE_HOOK(
     PlayerDropItemHook,
     HookPriority::Normal,
-    Player,
-    "?drop@Player@@UEAA_NAEBVItemStack@@_N@Z",
-    bool,
-    ItemStack const& item,
-    bool             randomly
+    ComplexInventoryTransaction,
+    "?handle@ComplexInventoryTransaction@@UEBA?AW4InventoryTransactionError@@AEAVPlayer@@_N@Z",
+    InventoryTransactionError,
+    Player& player,
+    bool    isSenderAuthority
 ) {
-    if (config.playerConfigs[getUuid()].enabled && config.playerConfigs[getUuid()].vanishNoDropItem) {
-        return false;
+    if (type == ComplexInventoryTransaction::Type::NormalTransaction) {
+        if (config.playerConfigs[player.getUuid()].enabled && config.playerConfigs[player.getUuid()].vanishNoDropItem) {
+            auto& actions =
+                data.getActions(InventorySource(InventorySourceType::ContainerInventory, ContainerID::Inventory));
+            InventorySlotPacket(
+                ContainerID::Inventory,
+                actions.data()->mSlot,
+                player.getInventory().getItem(actions[0].mSlot)
+            )
+                .sendTo(player);
+            return InventoryTransactionError::NoError;
+        }
     }
-    return origin(item, randomly);
+    return origin(player, isSenderAuthority);
+}
+
+// 处理玩家物品请求
+LL_TYPE_INSTANCE_HOOK(
+    HandleRequestActionHook,
+    HookPriority::Normal,
+    ItemStackRequestActionHandler,
+    "?handleRequestAction@ItemStackRequestActionHandler@@QEAA?AW4ItemStackNetResult@@AEBVItemStackRequestAction@@@Z",
+    ItemStackNetResult,
+    ItemStackRequestAction& requestAction
+) {
+    if (requestAction.mActionType == ItemStackRequestActionType::Drop) {
+        if (config.playerConfigs[mPlayer.getUuid()].enabled
+            && config.playerConfigs[mPlayer.getUuid()].vanishNoDropItem) {
+            return ItemStackNetResult::Error;
+        }
+    }
+    return origin(requestAction);
 }
 
 // 实体是否隐身
@@ -799,7 +833,8 @@ auto getAllHooks() {
         ItemUseOnHook,
         BroadcastLocalEventHook,
         BroadcastLevelEventHook,
-        PlayerDestroyBlockEventHook>();
+        PlayerDestroyBlockEventHook,
+        HandleRequestActionHook>();
 }
 
 void loadAllHook() { getAllHooks().hook(); }

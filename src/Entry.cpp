@@ -50,7 +50,7 @@ bool Entry::disable() {
 }
 
 bool Entry::unload() {
-    logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "[unloda] 噫呜呜呜~"));
+    logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "[unload] 噫呜呜呜~"));
     if (config.enabledPAPI) unregisterAllPAPI();
     unloadAllHook();
     return true;
