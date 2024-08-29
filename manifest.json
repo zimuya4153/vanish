@@ -1,7 +1,7 @@
 {
     "name": "${modName}",
     "entry": "${modFile}",
-    "version": "2.0.1",
+    "version": "${modVersion}",
     "type": "native",
     "author": "小小的子沐呀 QQ:1756150362",
     "description": "普通的隐身插件",

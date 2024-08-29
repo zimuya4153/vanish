@@ -19,6 +19,7 @@ Vanish 是一款可以使管理员隐身的插件，可以让玩家在游戏中�
 - 隐藏暂停菜单页面中玩家列表中的玩家
 - 睡觉逻辑不计算隐身玩家
 - 经验球等不会追踪隐身玩家
+- 不会触发红石机关(绊线钩,压力板)
 - 目标选择器无法选中隐身玩家(控制台和自己除外)
 - 隐身后生存模式不吸引怪物仇恨
 - 隐藏服务器信息(motd)玩家真实数量
@@ -101,8 +102,8 @@ void registerCmd() {
             auto  form   = ll::form::SimpleForm("选择玩家");
             ll::service::getLevel()->forEachPlayer([&form](Player& player2) -> bool {
                 if (ll::mod::ModManagerRegistry::getInstance().hasMod("vanish") && player2.isInvisible()) return true;
-                form.appendButton(player2.getRealName(), [](Player& player) -> void {
-                    player.sendMessage(fmt::format("你选择了玩家{}", player.getRealName()));
+                form.appendButton(player2.getRealName(), [&player2](Player& player) -> void {
+                    player.sendMessage(fmt::format("你选择了玩家{}", player2.getRealName()));
                 });
             });
             form.sendTo(*player);

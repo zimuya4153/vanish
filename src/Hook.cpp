@@ -29,6 +29,7 @@
 #include <mc/world/actor/player/PlayerListPacketType.h>
 #include <mc/world/actor/player/ServerPlayerBlockUseHandler.h>
 #include <mc/world/containers/ContainerID.h>
+#include <mc/world/gamemode/GameMode.h>
 #include <mc/world/inventory/network/ItemStackRequestAction.h>
 #include <mc/world/inventory/network/ItemStackRequestActionHandler.h>
 #include <mc/world/inventory/transaction/ComplexInventoryTransaction.h>
@@ -36,6 +37,7 @@
 #include <mc/world/level/Level.h>
 #include <mc/world/level/LevelEventManager.h>
 #include <mc/world/level/block/Block.h>
+#include <mc/world/level/block/TripWireBlock.h>
 #include <mc/world/level/block/actor/BarrelBlockActor.h>
 #include <mc/world/level/block/actor/ChestBlockActor.h>
 #include <mc/world/level/block/actor/RandomizableBlockActorContainerBase.h>
@@ -44,7 +46,6 @@
 #include <mc/world/phys/AABB.h>
 #include <optional>
 #include <vector>
-
 
 thread_local bool intercept = false;
 
@@ -794,6 +795,56 @@ LL_STATIC_HOOK(
     intercept = false;
 }
 
+// 破坏方块
+LL_TYPE_INSTANCE_HOOK(
+    GameModeDestroyBlockHook,
+    HookPriority::Normal,
+    GameMode,
+    "?destroyBlock@GameMode@@UEAA_NAEBVBlockPos@@E@Z",
+    bool,
+    BlockPos const& pos,
+    uchar           face
+) {
+    if (config.playerConfigs[getPlayer().getUuid()].enabled) intercept = true;
+    auto result = origin(pos, face);
+    intercept   = false;
+    return result;
+}
+
+// 玩家是否拥有能力能力
+LL_TYPE_INSTANCE_HOOK(
+    PlayerCanUseAbilityHook,
+    HookPriority::Normal,
+    Player,
+    &Player::canUseAbility,
+    bool,
+    AbilitiesIndex abilityIndex
+) {
+    if (abilityIndex == AbilitiesIndex::DoorsAndSwitches && config.playerConfigs[getUuid()].enabled
+        && config.playerConfigs[getUuid()].vanishNoRedstone)
+        return false;
+    return origin(abilityIndex);
+}
+
+// 绊线钩是否可以触发
+LL_TYPE_INSTANCE_HOOK(
+    IsEntityInsideTriggerableHook,
+    HookPriority::Normal,
+    TripWireBlock,
+    &TripWireBlock::_isEntityInsideTriggerable,
+    bool,
+    BlockSource const& region,
+    BlockPos const&    block,
+    Actor&             entity
+) {
+    if (entity.isType(ActorType::Player)) {
+        auto& player = static_cast<Player&>(entity);
+        if (config.playerConfigs[player.getUuid()].enabled && config.playerConfigs[player.getUuid()].vanishNoRedstone)
+            return false;
+    }
+    return origin(region, block, entity);
+}
+
 auto getAllHooks() {
     return ll::memory::HookRegistrar<
         TryCreateActorPacketHook,
@@ -834,7 +885,10 @@ auto getAllHooks() {
         BroadcastLocalEventHook,
         BroadcastLevelEventHook,
         PlayerDestroyBlockEventHook,
-        HandleRequestActionHook>();
+        HandleRequestActionHook,
+        PlayerCanUseAbilityHook,
+        IsEntityInsideTriggerableHook,
+        GameModeDestroyBlockHook>();
 }
 
 void loadAllHook() { getAllHooks().hook(); }

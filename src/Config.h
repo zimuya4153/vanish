@@ -14,6 +14,7 @@ struct PlayerConfig {
     std::string vanishBossbarText = "§6爷隐身了OvO"; // 隐身Boss栏文本
     bool        vanishNoTakeItem  = false;           // 隐身后禁止拿取物品
     bool        vanishNoDropItem  = false;           // 隐身后禁止丢出物品
+    bool        vanishNoRedstone  = false;           // 隐身后禁止触发红石机关
 };
 struct Config {
     int                                         version     = 2;        // 配置文件版本
