@@ -759,7 +759,7 @@ LL_TYPE_INSTANCE_HOOK(
     intercept = false;
 }
 
-// 物品对着方块右键
+// 物品对着方块使用
 LL_TYPE_INSTANCE_HOOK(
     ItemUseOnHook,
     HookPriority::Normal,
@@ -845,6 +845,41 @@ LL_TYPE_INSTANCE_HOOK(
     return origin(region, block, entity);
 }
 
+// 物品使用
+LL_TYPE_INSTANCE_HOOK(
+    ItemUseHook,
+    HookPriority::Normal,
+    ItemStack,
+    &ItemStack::use,
+    ItemStack&,
+    Player& player
+) {
+    if (config.playerConfigs[player.getUuid()].enabled)
+        intercept = true;
+    auto& result = origin(player);
+    intercept   = false;
+    return result;
+}
+
+// 方块接受交互
+LL_TYPE_INSTANCE_HOOK(
+    PlayerInteractBlockEventHook,
+    HookPriority::Normal,
+    GameMode,
+    "?useItemOn@GameMode@@UEAA?AVInteractionResult@@AEAVItemStack@@AEBVBlockPos@@EAEBVVec3@@PEBVBlock@@@Z",
+    InteractionResult,
+    ItemStack&      item,
+    BlockPos const& blockPos,
+    uchar           face,
+    Vec3 const&     clickPos,
+    Block const*    block
+) {
+    if (config.playerConfigs[getPlayer().getUuid()].enabled) intercept = true;
+    auto result = origin(item, blockPos, face, clickPos, block);
+    intercept   = false;
+    return result;
+}
+
 auto getAllHooks() {
     return ll::memory::HookRegistrar<
         TryCreateActorPacketHook,
@@ -888,7 +923,9 @@ auto getAllHooks() {
         HandleRequestActionHook,
         PlayerCanUseAbilityHook,
         IsEntityInsideTriggerableHook,
-        GameModeDestroyBlockHook>();
+        GameModeDestroyBlockHook,
+        ItemUseHook,
+        PlayerInteractBlockEventHook>();
 }
 
 void loadAllHook() { getAllHooks().hook(); }
