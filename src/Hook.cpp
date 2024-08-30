@@ -9,6 +9,7 @@
 #include <mc/deps/raknet/SystemAddress.h>
 #include <mc/network/ServerNetworkHandler.h>
 #include <mc/network/packet/AddActorBasePacket.h>
+#include <mc/network/packet/AnvilDamagePacket.h>
 #include <mc/network/packet/InventorySlotPacket.h>
 #include <mc/network/packet/PlayerActionPacket.h>
 #include <mc/network/packet/PlayerListPacket.h>
@@ -846,18 +847,10 @@ LL_TYPE_INSTANCE_HOOK(
 }
 
 // 物品使用
-LL_TYPE_INSTANCE_HOOK(
-    ItemUseHook,
-    HookPriority::Normal,
-    ItemStack,
-    &ItemStack::use,
-    ItemStack&,
-    Player& player
-) {
-    if (config.playerConfigs[player.getUuid()].enabled)
-        intercept = true;
+LL_TYPE_INSTANCE_HOOK(ItemUseHook, HookPriority::Normal, ItemStack, &ItemStack::use, ItemStack&, Player& player) {
+    if (config.playerConfigs[player.getUuid()].enabled) intercept = true;
     auto& result = origin(player);
-    intercept   = false;
+    intercept    = false;
     return result;
 }
 
@@ -878,6 +871,23 @@ LL_TYPE_INSTANCE_HOOK(
     auto result = origin(item, blockPos, face, clickPos, block);
     intercept   = false;
     return result;
+}
+
+// 铁砧使用
+LL_TYPE_INSTANCE_HOOK(
+    SendAnvilDamagePacketHook,
+    HookPriority::Normal,
+    ServerNetworkHandler,
+    &ServerNetworkHandler::handle,
+    void,
+    NetworkIdentifier const& source,
+    AnvilDamagePacket const& packet
+) {
+    if (auto player = getServerPlayer(source, packet.mClientSubId)) {
+        if (config.playerConfigs[player->getUuid()].enabled) intercept = true;
+    }
+    origin(source, packet);
+    intercept = false;
 }
 
 auto getAllHooks() {
@@ -925,7 +935,8 @@ auto getAllHooks() {
         IsEntityInsideTriggerableHook,
         GameModeDestroyBlockHook,
         ItemUseHook,
-        PlayerInteractBlockEventHook>();
+        PlayerInteractBlockEventHook,
+        SendAnvilDamagePacketHook>();
 }
 
 void loadAllHook() { getAllHooks().hook(); }
