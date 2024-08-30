@@ -8,6 +8,7 @@
 #include <memory>
 
 Vanish::Config config;
+ll::Logger logger("vanish");
 
 namespace Vanish {
 
@@ -24,7 +25,7 @@ bool Entry::load() {
     } catch (...) {
         ll::config::saveConfig(config, path);
     }
-    logger.info(fmt::format(fmt::fg(fmt::color::pink), "模组 vanish-v{} 已加载！", VERSION.to_string()));
+    logger.info(fmt::format(fmt::fg(fmt::color::pink), "模组 vanish-v{} 已加载！作者: 小小的子沐呀 QQ:1756150362", VERSION.to_string()));
     logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "[load] 喵~"));
     return true;
 }

@@ -47,7 +47,7 @@ Vanish 是一款可以使管理员隐身的插件，可以让玩家在游戏中�
     "version": 2, // 配置文件版本(勿动)
     "command": "vanish", // 命令名
     "alias": "v", // 命令别名
-    "bossbarID": 92732814, // BossbarID(可以不管)
+    "bossbarID": 1756150362, // BossbarID(可以不管)
     "enabledPAPI": true, // 启用PAPI变量
     "permMode": false, // 权限模式(如果启用,除非控制台给予权限,否则不可使用隐身命令)
     "permPlayers": [], // 有隐身权限的玩家(建议使用指令修改)
@@ -59,7 +59,8 @@ Vanish 是一款可以使管理员隐身的插件，可以让玩家在游戏中�
             "vanishBossbar": true, // 隐身后是否显示Boss栏
             "vanishBossbarText": "§6爷隐身了OvO", // Boss栏的文本
             "vanishNoTakeItem": false, // 隐身后是否可以捡起物品
-            "vanishNoDropItem": false // 隐身后是否可以丢弃物品
+            "vanishNoDropItem": false, // 隐身后是否可以丢弃物品
+            "vanishNoRedstone": false // 隐身后禁止触发红石机关
         }
     }
 }

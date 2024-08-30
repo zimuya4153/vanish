@@ -19,23 +19,18 @@ void registerCommands() {
         "隐身",
         config.permMode ? CommandPermissionLevel::Any : CommandPermissionLevel::GameDirectors
     );
-    if (!config.alias.empty()) {
-        cmd.alias(config.alias);
-    }
+    if (!config.alias.empty()) cmd.alias(config.alias);
     struct CommandParam {
         enum action { add, remove } action;
         CommandSelector<Player> player;
     };
     cmd.overload().execute([&](CommandOrigin const& origin, CommandOutput& output) -> void {
         auto* entity = origin.getEntity();
-        if (entity == nullptr || !entity->isType(ActorType::Player)) {
-            return output.error("非玩家不可执行");
-        }
+        if (entity == nullptr || !entity->isType(ActorType::Player)) return output.error("非玩家不可执行");
         if (config.permMode
             && std::count(config.permPlayers.begin(), config.permPlayers.end(), static_cast<Player*>(entity)->getUuid())
-                   == 0) {
+                   == 0)
             return output.error("您没有权限使用该命令");
-        }
         auto* player       = static_cast<Player*>(entity);
         auto& playerConfig = config.playerConfigs[player->getUuid()];
         auto  form         = ll::form::CustomForm();
@@ -73,7 +68,7 @@ void registerCommands() {
             }
         );
     });
-    if (config.permMode) {
+    if (config.permMode)
         cmd.overload<CommandParam>().required("action").required("player").execute(
             [&](CommandOrigin const& origin, CommandOutput& output, CommandParam const& result) -> void {
                 if (origin.getOriginType() != CommandOriginType::DedicatedServer)
@@ -107,5 +102,4 @@ void registerCommands() {
                 ll::config::saveConfig(config, Vanish::Entry::getInstance().getSelf().getConfigDir() / "config.json");
             }
         );
-    }
 }

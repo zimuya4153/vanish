@@ -36,18 +36,8 @@ void setPlayerBossbar(Player& player, bool enabled) {
             addActorBinaryStream.writeFloat(player.getPosition().x);
             addActorBinaryStream.writeFloat(-66.0f);
             addActorBinaryStream.writeFloat(player.getPosition().z);
-            addActorBinaryStream.writeFloat(0);
-            addActorBinaryStream.writeFloat(0);
-            addActorBinaryStream.writeFloat(0);
-            addActorBinaryStream.writeFloat(0);
-            addActorBinaryStream.writeFloat(0);
-            addActorBinaryStream.writeFloat(0.0f);
-            addActorBinaryStream.writeFloat(0.0f);
-            addActorBinaryStream.writeUnsignedVarInt(0);
-            addActorBinaryStream.writeUnsignedVarInt(0);
-            addActorBinaryStream.writeUnsignedVarInt(0);
-            addActorBinaryStream.writeUnsignedVarInt(0);
-            addActorBinaryStream.writeUnsignedVarInt(0);
+            for (int i = 0; i < 7; i++) addActorBinaryStream.writeFloat(0.0f);
+            for (int i = 0; i < 5; i++) addActorBinaryStream.writeUnsignedVarInt(0);
             if (auto networksystem = ll::service::getNetworkSystem(); networksystem) {
                 if (auto connection = networksystem->_getConnectionFromId(player.getNetworkIdentifier()); connection) {
                     if (auto peer = connection->mPeer; peer) {
