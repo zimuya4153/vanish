@@ -5,6 +5,7 @@
 #include <ll/api/memory/Hook.h>
 #include <ll/api/service/Bedrock.h>
 #include <mc/common/wrapper/InteractionResult.h>
+#include <mc/deps/core/common/bedrock/LevelSoundManager.h>
 #include <mc/deps/raknet/RNS2_Windows_Linux_360.h>
 #include <mc/deps/raknet/SystemAddress.h>
 #include <mc/network/ServerNetworkHandler.h>
@@ -743,6 +744,24 @@ LL_TYPE_INSTANCE_HOOK(
     origin(type, pos, a3, a4);
 }
 
+// 播放声音
+LL_TYPE_INSTANCE_HOOK(
+    PlaySoundHook,
+    HookPriority::Normal,
+    LevelSoundManager,
+    &LevelSoundManager::playSound,
+    void,
+    Puv::Legacy::LevelSoundEvent     type,
+    Vec3 const&                      pos,
+    int                              data,
+    ActorDefinitionIdentifier const& entityType,
+    bool                             isBabyMob,
+    bool                             isGlobal
+) {
+    if (intercept) return;
+    origin(type, pos, data, entityType, isBabyMob, isGlobal);
+}
+
 // 处理玩家动作
 LL_TYPE_INSTANCE_HOOK(
     HandlerPlayerActionPacketHook,
@@ -875,7 +894,7 @@ LL_TYPE_INSTANCE_HOOK(
 
 // 铁砧使用
 LL_TYPE_INSTANCE_HOOK(
-    SendAnvilDamagePacketHook,
+    HandleAnvilDamagePacketHook,
     HookPriority::Normal,
     ServerNetworkHandler,
     &ServerNetworkHandler::handle,
@@ -936,7 +955,8 @@ auto getAllHooks() {
         GameModeDestroyBlockHook,
         ItemUseHook,
         PlayerInteractBlockEventHook,
-        SendAnvilDamagePacketHook>();
+        HandleAnvilDamagePacketHook,
+        PlaySoundHook>();
 }
 
 void loadAllHook() { getAllHooks().hook(); }
