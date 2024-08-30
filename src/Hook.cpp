@@ -3,6 +3,7 @@
 #include "Global.h"
 
 #include <ll/api/memory/Hook.h>
+#include <ll/api/schedule/Scheduler.h>
 #include <ll/api/service/Bedrock.h>
 #include <mc/common/wrapper/InteractionResult.h>
 #include <mc/deps/core/common/bedrock/LevelSoundManager.h>
@@ -28,6 +29,7 @@
 #include <mc/world/actor/ActorDamageSource.h>
 #include <mc/world/actor/ActorDefinitionIdentifier.h>
 #include <mc/world/actor/player/Player.h>
+#include <mc/world/actor/player/PlayerDimensionTransferer.h>
 #include <mc/world/actor/player/PlayerListPacketType.h>
 #include <mc/world/actor/player/ServerPlayerBlockUseHandler.h>
 #include <mc/world/containers/ContainerID.h>
@@ -49,7 +51,8 @@
 #include <optional>
 #include <vector>
 
-thread_local bool intercept = false;
+thread_local bool               intercept = false;
+ll::schedule::GameTickScheduler scheduler;
 
 std::optional<mce::UUID> getUuid(std::string const& name) {
     if (auto level = ll::service::getLevel(); level.has_value()) {
@@ -343,17 +346,20 @@ LL_TYPE_INSTANCE_HOOK(
 LL_TYPE_INSTANCE_HOOK(
     PlayerChangeDimensionHook,
     HookPriority::Normal,
-    Level,
-    &Level::requestPlayerChangeDimension,
+    PlayerDimensionTransferer,
+    "?playerPrepareRegion@PlayerDimensionTransferer@@UEAAXAEAVPlayer@@AEBVChangeDimensionRequest@@AEBVDimension@@@Z",
     void,
-    Player&                  player,
-    ChangeDimensionRequest&& changeRequest
+    Player&                       player,
+    const ChangeDimensionRequest& toDimension,
+    const Dimension&              dimension
 ) {
-    origin(player, std::move(changeRequest));
-    auto& playerConfig = config.playerConfigs[player.getUuid()];
-    if (playerConfig.enabled && playerConfig.vanishBossbar) {
-        setPlayerBossbar(player, true);
-    }
+    origin(player, toDimension, dimension);
+    scheduler.add<ll::schedule::DelayTask>(ll::chrono_literals::operator""_tick(20 * 5), [&player]() -> void {
+        auto& playerConfig = config.playerConfigs[player.getUuid()];
+        if (playerConfig.enabled && playerConfig.vanishBossbar) {
+            setPlayerBossbar(player, true);
+        }
+    });
 }
 
 // 玩家能否睡觉
@@ -449,9 +455,8 @@ LL_TYPE_INSTANCE_HOOK(
         1,
         false
     );
-    (*(void(__fastcall**)(Actor*, __int64, uint64_t))(*(uint64_t*)this + 8i64))(this, 14i64, (unsigned __int8)value);
-    (*(__int64(__fastcall**)(Actor*, __int64, uint64_t))(*(uint64_t*)this + 8i64))(this, 5i64, value);
-    return;
+    setStatusFlag(ActorFlags::CanShowName,value);
+    setStatusFlag(ActorFlags::Invisible,value);
 }
 
 // 玩家进服
