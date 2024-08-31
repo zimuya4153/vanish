@@ -230,7 +230,12 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (config.playerConfigs[player.getUuid()].enabled) return;
+    if (config.playerConfigs[player.getUuid()].enabled) {
+        static_cast<RandomizableBlockActorFillingContainer*>(this)->startOpen(player);
+        if (*((uint64_t*)this + 54) && (*((uint64_t*)this + 396) & 1) != 0)
+            static_cast<RandomizableBlockActorFillingContainer*>(this + 240)->startOpen(player);
+        return;
+    }
     origin(player);
 }
 

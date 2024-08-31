@@ -35,6 +35,10 @@ void registerCommands() {
         auto& playerConfig = config.playerConfigs[player->getUuid()];
         auto  form         = ll::form::CustomForm();
         form.setTitle("隐身菜单");
+        form.appendLabel(fmt::format(
+            "§6欢迎使用隐身插件 §c当前版本§d:§e{0}\n§b作者 §4小小的子沐呀\n§g--------------------------------",
+            VERSION.to_string()
+        ));
         form.appendToggle("enabled", "是否开启隐身", playerConfig.enabled);
         form.appendToggle("vanishPromptExit", "隐身后提示退出游戏", playerConfig.vanishPromptExit);
         form.appendToggle("appearPromptJoin", "解除隐身后提示加入游戏", playerConfig.appearPromptJoin);
