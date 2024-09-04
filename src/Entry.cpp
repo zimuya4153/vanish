@@ -39,6 +39,7 @@ bool Entry::enable() {
         "欢迎使用隐身模组，如有问题，请加Q群(985991178)反馈或前往github提交issues。"
     ));
     logger.info(fmt::format(fmt::fg(fmt::color::yellow), "Github地址: {}", "https://github.com/zimuya4153/vanish"));
+    logger.info(fmt::format(fmt::fg(fmt::color::red), "点个star支持一下吧QvQ 喵喵喵……QvQ"));
     logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "[enable] 隐身模组启动，嗷呜~~~"));
     return true;
 }

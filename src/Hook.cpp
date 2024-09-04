@@ -9,6 +9,7 @@
 #include <mc/deps/core/common/bedrock/LevelSoundManager.h>
 #include <mc/deps/raknet/RNS2_Windows_Linux_360.h>
 #include <mc/deps/raknet/SystemAddress.h>
+#include <mc/entity/components/PushableComponent.h>
 #include <mc/network/ServerNetworkHandler.h>
 #include <mc/network/packet/AddActorBasePacket.h>
 #include <mc/network/packet/AnvilDamagePacket.h>
@@ -28,6 +29,7 @@
 #include <mc/world/actor/ActorDamageByChildActorSource.h>
 #include <mc/world/actor/ActorDamageSource.h>
 #include <mc/world/actor/ActorDefinitionIdentifier.h>
+#include <mc/world/actor/item/ExperienceOrb.h>
 #include <mc/world/actor/player/Player.h>
 #include <mc/world/actor/player/PlayerDimensionTransferer.h>
 #include <mc/world/actor/player/PlayerListPacketType.h>
@@ -862,6 +864,65 @@ LL_TYPE_INSTANCE_HOOK(
     intercept = false;
 }
 
+// 触碰经验球
+LL_TYPE_INSTANCE_HOOK(
+    PlayerTouchExperienceOrbHook,
+    HookPriority::Normal,
+    ExperienceOrb,
+    "?playerTouch@ExperienceOrb@@UEAAXAEAVPlayer@@@Z",
+    void,
+    Player& player
+) {
+    if (config.playerConfigs[player.getUuid()].enabled && config.playerConfigs[player.getUuid()].vanishNoTouchEntity)
+        return;
+    origin(player);
+}
+
+// 实体推动
+LL_TYPE_INSTANCE_HOOK(
+    PushableComponentPushHook,
+    HookPriority::Normal,
+    PushableComponent,
+    &PushableComponent::push,
+    void,
+    Actor&      owner,
+    Vec3 const& vec
+) {
+    if (owner.isType(ActorType::Player)) {
+        auto& player = static_cast<Player&>(owner);
+        if (config.playerConfigs[player.getUuid()].enabled
+            && config.playerConfigs[player.getUuid()].vanishNoTouchEntity)
+            return;
+    }
+    origin(owner, vec);
+}
+
+// 实体推动
+LL_TYPE_INSTANCE_HOOK(
+    PushableComponentPushHook2,
+    HookPriority::Normal,
+    PushableComponent,
+    &PushableComponent::push,
+    void,
+    Actor& owner,
+    Actor& other,
+    bool   pushSelfOnly
+) {
+    if (owner.isType(ActorType::Player)) {
+        auto& player = static_cast<Player&>(owner);
+        if (config.playerConfigs[player.getUuid()].enabled
+            && config.playerConfigs[player.getUuid()].vanishNoTouchEntity)
+            return;
+    }
+    if (other.isType(ActorType::Player)) {
+        auto& player = static_cast<Player&>(other);
+        if (config.playerConfigs[player.getUuid()].enabled
+            && config.playerConfigs[player.getUuid()].vanishNoTouchEntity)
+            return;
+    }
+    origin(owner, other, pushSelfOnly);
+}
+
 auto getAllHooks() {
     return ll::memory::HookRegistrar<
         TryCreateActorPacketHook,
@@ -909,7 +970,10 @@ auto getAllHooks() {
         ItemUseHook,
         PlayerInteractBlockHook,
         HandleAnvilDamagePacketHook,
-        PlaySoundHook>();
+        PlaySoundHook,
+        PlayerTouchExperienceOrbHook,
+        PushableComponentPushHook,
+        PushableComponentPushHook2>();
 }
 
 void loadAllHook() { getAllHooks().hook(); }
