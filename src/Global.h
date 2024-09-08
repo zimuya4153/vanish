@@ -15,5 +15,4 @@ extern void setPlayerVanishConfig(mce::UUID& uuid, Vanish::PlayerConfig playerCo
 extern void setPlayerBossbar(class Player& player, bool enabled);
 extern void registerPAPI();
 extern void unregisterAllPAPI();
-extern void loadAllHook();
-extern void unloadAllHook();
+extern void HookCall(bool enable);

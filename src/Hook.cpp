@@ -10,6 +10,7 @@
 #include <mc/deps/raknet/RNS2_Windows_Linux_360.h>
 #include <mc/deps/raknet/SystemAddress.h>
 #include <mc/entity/components/PushableComponent.h>
+#include <mc/entity/utilities/ActorCollision.h>
 #include <mc/network/ServerNetworkHandler.h>
 #include <mc/network/packet/AddActorBasePacket.h>
 #include <mc/network/packet/AnvilDamagePacket.h>
@@ -131,7 +132,7 @@ LL_TYPE_INSTANCE_HOOK(
 
 // 播放移动音效
 LL_TYPE_INSTANCE_HOOK(PlayActorMovementSoundHook, HookPriority::Normal, Actor, &Actor::playMovementSound, void) {
-    if (isType(ActorType::Player) && config.playerConfigs[((Player*)this)->getUuid()].enabled) return;
+    if (isPlayer() && config.playerConfigs[((Player*)this)->getUuid()].enabled) return;
     origin();
 }
 
@@ -147,7 +148,7 @@ LL_TYPE_INSTANCE_HOOK(
     Block const&                 block,
     bool                         isGlobal
 ) {
-    if (isType(ActorType::Player) && config.playerConfigs[((Player*)this)->getUuid()].enabled) return;
+    if (isPlayer() && config.playerConfigs[((Player*)this)->getUuid()].enabled) return;
     origin(type, pos, block, isGlobal);
 }
 
@@ -163,7 +164,7 @@ LL_TYPE_INSTANCE_HOOK(
     Actor&          entity,
     float           fallDistance
 ) {
-    if (entity.isType(ActorType::Player) && config.playerConfigs[((Player&)entity).getUuid()].enabled) intercept = true;
+    if (entity.isPlayer() && config.playerConfigs[((Player&)entity).getUuid()].enabled) intercept = true;
     origin(region, pos, entity, fallDistance);
     intercept = false;
 }
@@ -390,7 +391,7 @@ LL_TYPE_INSTANCE_HOOK(
 
 // 实体是否隐身
 LL_TYPE_INSTANCE_HOOK(PlayerIsInvisible, HookPriority::Normal, Actor, "?isInvisible@Actor@@UEBA_NXZ", bool) {
-    return isType(ActorType::Player) ? config.playerConfigs[((Player*)this)->getUuid()].enabled : origin();
+    return isPlayer() ? config.playerConfigs[((Player*)this)->getUuid()].enabled : origin();
 }
 
 // 设置实体隐身
@@ -402,7 +403,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     bool value
 ) {
-    if (!isType(ActorType::Player)) return origin(value);
+    if (!isPlayer()) return origin(value);
     playSynchronizedSound(
         static_cast<Puv::Legacy::LevelSoundEvent>(static_cast<int>(value) ^ 1 + 430),
         getAttachPos(ActorLocation::Body),
@@ -442,7 +443,7 @@ LL_TYPE_INSTANCE_HOOK(
 ) {
     if (auto level = ll::service::getLevel(); level.has_value()) {
         auto* entity = level->fetchEntity(mEntityID);
-        if (entity && entity->isType(ActorType::Player)
+        if (entity && entity->isPlayer()
             && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled) {
             mEntityID         = ActorUniqueID();
             mEntityType       = ActorType::None;
@@ -468,7 +469,7 @@ LL_TYPE_INSTANCE_HOOK(
 ) {
     if (auto level = ll::service::getLevel(); level.has_value()) {
         auto* entity = level->fetchEntity(mEntityID);
-        if (entity && entity->isType(ActorType::Player)
+        if (entity && entity->isPlayer()
             && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled) {
             mDamagingActorId         = ActorUniqueID();
             mDamagingActorType       = ActorType::None;
@@ -547,7 +548,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Actor* entity
 ) {
-    if (entity && entity->isType(ActorType::Player)
+    if (entity && entity->isPlayer()
         && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled)
         return;
     origin(entity);
@@ -564,12 +565,12 @@ LL_TYPE_INSTANCE_HOOK(
 ) {
     auto result = origin(commandOrigin);
     if (auto* entity = commandOrigin.getEntity();
-        entity && entity->isType(ActorType::Player)
+        entity && entity->isPlayer()
         && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled)
         return result;
     if (commandOrigin.getOriginType() != CommandOriginType::DedicatedServer && result) {
         for (auto& actor : *result) {
-            if (actor->isType(ActorType::Player)
+            if (actor->isPlayer()
                 && config.playerConfigs[static_cast<Player*>(actor)->getUuid()].enabled)
                 result->erase(std::remove(result->begin(), result->end(), actor), result->end());
         }
@@ -748,7 +749,7 @@ LL_TYPE_INSTANCE_HOOK(
     uchar       face,
     Vec3 const& clickPos
 ) {
-    if (entity.isType(ActorType::Player) && config.playerConfigs[static_cast<Player&>(entity).getUuid()].enabled)
+    if (entity.isPlayer() && config.playerConfigs[static_cast<Player&>(entity).getUuid()].enabled)
         intercept = true;
     auto result = origin(entity, x, y, z, face, clickPos);
     intercept   = false;
@@ -757,7 +758,7 @@ LL_TYPE_INSTANCE_HOOK(
 
 // 玩家破坏方块
 LL_STATIC_HOOK(
-    PlayerDestroyBlockEventHook,
+    PlayerDestroyBlockHook,
     HookPriority::Normal,
     &ServerPlayerBlockUseHandler::onStartDestroyBlock,
     void,
@@ -812,7 +813,7 @@ LL_TYPE_INSTANCE_HOOK(
     BlockPos const&    block,
     Actor&             entity
 ) {
-    if (entity.isType(ActorType::Player)) {
+    if (entity.isPlayer()) {
         auto& player = static_cast<Player&>(entity);
         if (config.playerConfigs[player.getUuid()].enabled && config.playerConfigs[player.getUuid()].vanishNoRedstone)
             return false;
@@ -888,7 +889,7 @@ LL_TYPE_INSTANCE_HOOK(
     Actor&      owner,
     Vec3 const& vec
 ) {
-    if (owner.isType(ActorType::Player)) {
+    if (owner.isPlayer()) {
         auto& player = static_cast<Player&>(owner);
         if (config.playerConfigs[player.getUuid()].enabled
             && config.playerConfigs[player.getUuid()].vanishNoTouchEntity)
@@ -908,13 +909,13 @@ LL_TYPE_INSTANCE_HOOK(
     Actor& other,
     bool   pushSelfOnly
 ) {
-    if (owner.isType(ActorType::Player)) {
+    if (owner.isPlayer()) {
         auto& player = static_cast<Player&>(owner);
         if (config.playerConfigs[player.getUuid()].enabled
             && config.playerConfigs[player.getUuid()].vanishNoTouchEntity)
             return;
     }
-    if (other.isType(ActorType::Player)) {
+    if (other.isPlayer()) {
         auto& player = static_cast<Player&>(other);
         if (config.playerConfigs[player.getUuid()].enabled
             && config.playerConfigs[player.getUuid()].vanishNoTouchEntity)
@@ -923,8 +924,18 @@ LL_TYPE_INSTANCE_HOOK(
     origin(owner, other, pushSelfOnly);
 }
 
-auto getAllHooks() {
-    return ll::memory::HookRegistrar<
+LL_STATIC_HOOK(IsPickableHook, HookPriority::Normal, "?isPickable@ActorCollision@@YA_NAEBVEntityContext@@@Z", bool, EntityContext const& context) {
+    if (auto actor = Actor::tryGetFromEntity(context, true)) {
+        if (actor->isPlayer()) {
+            auto player = static_cast<const Player*>(actor);
+            if (config.playerConfigs[player->getUuid()].enabled) return false;
+        }
+    }
+    return origin(context);
+}
+
+struct Impl {
+    ll::memory::HookRegistrar<
         TryCreateActorPacketHook,
         SendBroadcastHook,
         SendBroadcastHook2,
@@ -962,7 +973,7 @@ auto getAllHooks() {
         ItemUseOnHook,
         BroadcastLocalEventHook,
         BroadcastLevelEventHook,
-        PlayerDestroyBlockEventHook,
+        PlayerDestroyBlockHook,
         HandleRequestActionHook,
         PlayerCanUseAbilityHook,
         IsEntityInsideTriggerableHook,
@@ -973,9 +984,15 @@ auto getAllHooks() {
         PlaySoundHook,
         PlayerTouchExperienceOrbHook,
         PushableComponentPushHook,
-        PushableComponentPushHook2>();
+        PushableComponentPushHook2,
+        IsPickableHook>
+        hook;
+};
+
+std::unique_ptr<Impl> impl;
+
+void HookCall(bool enable) {
+    if (enable) {
+        if (!impl) impl = std::make_unique<Impl>();
+    } else impl.reset();
 }
-
-void loadAllHook() { getAllHooks().hook(); }
-
-void unloadAllHook() { getAllHooks().unhook(); }

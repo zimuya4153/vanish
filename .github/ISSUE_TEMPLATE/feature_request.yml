@@ -1,7 +1,7 @@
 name: Feature request | 功能请求
 description: Suggest an idea for this project | 提出对本项目的建议
-title: "[Feature]: "
-labels: ["enhancement"]
+title: "[Feature | 增强]: "
+labels: ["enhancement | 增强"]
 body:
   - type: textarea
     attributes:
