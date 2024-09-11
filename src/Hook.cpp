@@ -842,7 +842,9 @@ LL_TYPE_INSTANCE_HOOK(
     Vec3 const&     clickPos,
     Block const*    block
 ) {
-    if (config.playerConfigs[getPlayer().getUuid()].enabled) intercept = true;
+    if (config.playerConfigs[getPlayer().getUuid()].enabled
+        && config.playerConfigs[getPlayer().getUuid()].vanishNoInteractSound)
+        intercept = true;
     auto result = origin(item, blockPos, face, clickPos, block);
     intercept   = false;
     return result;

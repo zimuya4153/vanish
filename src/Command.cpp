@@ -53,6 +53,7 @@ void registerCommands() {
         form.appendToggle("vanishNoDropItem", "隐身后禁止丢出物品", playerConfig.vanishNoDropItem);
         form.appendToggle("vanishNoRedstone", "隐身后禁止触发红石机关", playerConfig.vanishNoRedstone);
         form.appendToggle("vanishNoTouchEntity", "隐身后禁止触碰实体", playerConfig.vanishNoTouchEntity);
+        form.appendToggle("vanishNoInteractSound", "隐身后无交互方块音效", playerConfig.vanishNoInteractSound);
         form.sendTo(
             *player,
             [](Player& player, ll::form::CustomFormResult const& result, ll::form::FormCancelReason) -> void {
@@ -68,7 +69,8 @@ void registerCommands() {
                         static_cast<bool>(std::get<uint64>(result->at("vanishNoTakeItem"))),
                         static_cast<bool>(std::get<uint64>(result->at("vanishNoDropItem"))),
                         static_cast<bool>(std::get<uint64>(result->at("vanishNoRedstone"))),
-                        static_cast<bool>(std::get<uint64>(result->at("vanishNoTouchEntity")))
+                        static_cast<bool>(std::get<uint64>(result->at("vanishNoTouchEntity"))),
+                        static_cast<bool>(std::get<uint64>(result->at("vanishNoInteractSound"))),
                     }
                 );
             }

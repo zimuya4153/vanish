@@ -4,6 +4,8 @@
 - 兼容[高亮显示](https://https://github.com/zimuya4153/LSE_Waila)
 - 修改hook启动/关闭方式
 - 修改`isType(ActorType::Player)`为`isPlayer()`方法
+- 修改PAPI变量注册逻辑
+- 新增“隐藏方块交互音效”开关
 
 ## 2.0.2
 - 修复开启“隐身后禁止拿取物品”后丢出物品，物品消失的问题 [#4]
