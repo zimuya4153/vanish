@@ -9,89 +9,128 @@
 #include <string>
 #include <windows.h>
 
-void registerServerPAPI() {
-    typedef bool (*RegisterServerPlaceholderFun)(
-        std::string const&           name,
-        std::function<std::string()> callback,
-        std::string const&           PluginName
-    );
-    auto registerServerPlaceholder = (RegisterServerPlaceholderFun)GetProcAddress(
+namespace PlaceholderAPI {
+void registerServerPlaceholder(
+    std::string const&           name,
+    std::function<std::string()> callback,
+    std::string const&           PluginName
+) {
+    auto func = (bool (*)(std::string const&, std::function<std::string()>, std::string const&))GetProcAddress(
         GetModuleHandle(L"GMLIB.dll"),
         "?registerServerPlaceholder@PlaceholderAPI@Server@GMLIB@@SA_NAEBV?$basic_string@DU?$char_traits@D@std@@V?$"
         "allocator@D@2@@std@@V?$function@$$A6A?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ@5@0@Z"
     );
-    if (!registerServerPlaceholder) return logger.warn("注册服务器PAPI变量函数获取失败，已停止注册。");
-    if (!registerServerPlaceholder(
-            "vanish_vanishCount",
-            []() -> std::string {
-                int result = 0;
-                if (auto level = ll::service::getLevel()) {
-                    level->forEachPlayer([&result](Player& player) -> bool {
-                        if (config.playerConfigs[player.getUuid()].enabled) {
-                            result++;
-                        }
-                        return true;
-                    });
-                }
-                return std::to_string(result);
-            },
-            "vanish"
-        ))
-        logger.error("注册PAPI变量 vanish_vanishCount 失败。");
-    if (!registerServerPlaceholder(
-            "vanish_invisibleCount",
-            []() -> std::string {
-                int result = 0;
-                if (auto level = ll::service::getLevel()) {
-                    level->forEachPlayer([&result](Player& player) -> bool {
-                        if (!config.playerConfigs[player.getUuid()].enabled) {
-                            result++;
-                        }
-                        return true;
-                    });
-                }
-                return std::to_string(result);
-            },
-            "vanish"
-        ))
-        logger.error("注册PAPI变量 vanish_invisibleCount 失败。");
+    if (!func) return logger.error("“注册服务器PAPI变量函数” 获取失败，无法注册PAPI变量。");
+    if (!func(name, callback, PluginName)) return logger.error("注册服务器PAPI变量 {0} 失败。", name);
 }
 
-void registerPlayerPAPI() {
-    typedef bool (*RegisterPlayerPlaceholderFun)(
-        std::string const&                        name,
-        std::function<std::string(class Player*)> callback,
-        std::string const&                        PluginName
-    );
-    auto registerServerPlaceholder = (RegisterPlayerPlaceholderFun)GetProcAddress(
+void registerServerPlaceholder(
+    std::string const&                                                       name,
+    std::function<std::string(std::unordered_map<std::string, std::string>)> callback,
+    std::string const&                                                       PluginName
+) {
+    auto func =
+        (bool (*)(std::string const&, std::function<std::string(std::unordered_map<std::string, std::string>)>, std::string const&)
+        )
+            GetProcAddress(
+                GetModuleHandle(L"GMLIB.dll"),
+                "?registerServerPlaceholder@PlaceholderAPI@Server@GMLIB@@SA_NAEBV?$basic_string@DU?$char_traits@D@std@@"
+                "V?$allocator@D@2@@std@@V?$function@$$A6A?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@"
+                "std@@V?$unordered_map@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V12@U?$hash@V?$"
+                "basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@U?$equal_to@V?$basic_string@DU?$char_"
+                "traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@"
+                "std@@V?$allocator@D@2@@std@@V12@@std@@@2@@2@@Z@5@0@Z"
+            );
+    if (!func) return logger.error("“注册服务器带参数的PAPI变量函数” 获取失败，无法注册PAPI变量。");
+    if (!func(name, callback, PluginName)) return logger.error("注册服务器带参数的PAPI变量函数 {0} 失败。", name);
+}
+
+void registerPlayerPlaceholder(
+    std::string const&                  name,
+    std::function<std::string(Player*)> callback,
+    std::string const&                  PluginName
+) {
+    auto func = (bool (*)(std::string const&, std::function<std::string(Player*)>, std::string const&))GetProcAddress(
         GetModuleHandle(L"GMLIB.dll"),
         "?registerPlayerPlaceholder@PlaceholderAPI@Server@GMLIB@@SA_NAEBV?$basic_string@DU?$char_traits@D@std@@V?$"
         "allocator@D@2@@std@@V?$function@$$A6A?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@"
         "PEAVPlayer@@@Z@5@0@Z"
     );
-    if (!registerServerPlaceholder) return logger.warn("注册玩家PAPI变量函数获取失败，已停止注册。");
-    if (!registerServerPlaceholder(
-            "vanish_isVanish",
-            [](Player* player) -> std::string { return config.playerConfigs[player->getUuid()].enabled ? "是" : "否"; },
-            "vanish"
-        ))
-        logger.error("注册PAPI变量 vanish_isVanish 失败。");
+    if (!func) return logger.error("“注册玩家PAPI变量函数” 获取失败，无法注册PAPI变量。");
+    if (!func(name, callback, PluginName)) return logger.error("注册玩家PAPI变量 {0} 失败。", name);
 }
 
-void registerPAPI() {
-    registerServerPAPI();
-    registerPlayerPAPI();
+void registerPlayerPlaceholder(
+    std::string const&                                                                name,
+    std::function<std::string(Player*, std::unordered_map<std::string, std::string>)> callback,
+    std::string const&                                                                PluginName
+) {
+    auto func =
+        (bool (*)(std::string const&, std::function<std::string(Player*, std::unordered_map<std::string, std::string>)>, std::string const&)
+        )
+            GetProcAddress(
+                GetModuleHandle(L"GMLIB.dll"),
+                "?registerPlayerPlaceholder@PlaceholderAPI@Server@GMLIB@@SA_NAEBV?$basic_string@DU?$char_traits@D@std@@"
+                "V?$allocator@D@2@@std@@V?$function@$$A6A?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@"
+                "std@@PEAVPlayer@@V?$unordered_map@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V12@U?"
+                "$hash@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@U?$equal_to@V?$basic_string@DU?"
+                "$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_"
+                "traits@D@std@@V?$allocator@D@2@@std@@V12@@std@@@2@@2@@Z@5@0@Z"
+            );
+    if (!func) return logger.error("“注册玩家带参数的PAPI变量函数” 获取失败，无法注册PAPI变量。");
+    if (!func(name, callback, PluginName)) return logger.error("注册玩家带参数的PAPI变量 {0} 失败。", name);
 }
 
-void unregisterAllPAPI() {
-    typedef bool (*UnregisterPlaceholderFun)(std::string const& placeholder);
-    auto unregisterPlaceholder = (UnregisterPlaceholderFun)GetProcAddress(
+void unregisterPlaceholder(std::string const& placeholder) {
+    auto func = (bool (*)(std::string const&))GetProcAddress(
         GetModuleHandle(L"GMLIB.dll"),
         "?unregisterPlaceholder@PlaceholderAPI@Server@GMLIB@@SA_NAEBV?$basic_string@DU?$char_traits@D@std@@V?$"
         "allocator@D@2@@std@@@Z"
     );
-    if (!unregisterPlaceholder) return logger.error("注销PAPI变量函数获取失败，无法卸载PAPI变量。");
-    unregisterPlaceholder("vanish_vanishCount");
-    unregisterPlaceholder("vanish_invisibleCount");
-    unregisterPlaceholder("vanish_isVanish");
+    if (!func) return logger.error("“注销PAPI变量函数” 获取失败，无法注销PAPI变量。");
+    if (!func(placeholder)) return logger.error("注销PAPI变量 {0} 失败。", placeholder);
+}
+} // namespace PlaceholderAPI
+
+void PAPICall(bool enable) {
+    if (enable) {
+        PlaceholderAPI::registerServerPlaceholder(
+            "vanish_vanishCount",
+            []() -> std::string {
+                int result = 0;
+                if (auto level = ll::service::getLevel(); level)
+                    level->forEachPlayer([&result](Player& player) -> bool {
+                        if (config.playerConfigs[player.getUuid()].enabled) result++;
+                        return true;
+                    });
+                return std::to_string(result);
+            },
+            "vanish"
+        );
+        PlaceholderAPI::registerServerPlaceholder(
+            "vanish_invisibleCount",
+            []() -> std::string {
+                int result = 0;
+                if (auto level = ll::service::getLevel(); level)
+                    level->forEachPlayer([&result](Player& player) -> bool {
+                        if (!config.playerConfigs[player.getUuid()].enabled) result++;
+                        return true;
+                    });
+                return std::to_string(result);
+            },
+            "vanish"
+        );
+        PlaceholderAPI::registerPlayerPlaceholder(
+            "vanish_isVanish",
+            [](Player* player) -> std::string {
+                return player && config.playerConfigs[player->getUuid()].enabled ? "是" : "否";
+            },
+            "vanish"
+        );
+    } else {
+        // PlaceholderAPI::unregisterPlaceholder("vanish");   会导致无法卸载，咱也不知道为啥(・｀ω´・)
+        PlaceholderAPI::unregisterPlaceholder("vanish_vanishCount");
+        PlaceholderAPI::unregisterPlaceholder("vanish_invisibleCount");
+        PlaceholderAPI::unregisterPlaceholder("vanish_isVanish");
+    }
 }

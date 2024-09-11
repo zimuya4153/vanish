@@ -37,7 +37,7 @@ bool Entry::load() {
 bool Entry::enable() {
     registerCommands();
     HookCall(true);
-    if (config.enabledPAPI) registerPAPI();
+    if (config.enabledPAPI) PAPICall(true);
     logger.info(fmt::format(
         fmt::fg(fmt::color::aqua),
         "欢迎使用隐身模组，如有问题，请加Q群(985991178)反馈或前往github提交issues。"
@@ -50,15 +50,13 @@ bool Entry::enable() {
 
 bool Entry::disable() {
     logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "[disable] 唔姆姆~"));
-    if (config.enabledPAPI) unregisterAllPAPI();
+    if (config.enabledPAPI) PAPICall(false);
     HookCall(false);
     return true;
 }
 
 bool Entry::unload() {
     logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "[unload] 噫呜呜呜~"));
-    if (config.enabledPAPI) unregisterAllPAPI();
-    HookCall(false);
     return true;
 }
 
