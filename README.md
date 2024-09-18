@@ -62,7 +62,9 @@ Vanish 是一款可以使管理员隐身的插件，可以让玩家在游戏中�
             "vanishBossbarText": "§6爷隐身了OvO", // Boss栏的文本
             "vanishNoTakeItem": false, // 隐身后是否可以捡起物品
             "vanishNoDropItem": false, // 隐身后是否可以丢弃物品
-            "vanishNoRedstone": false // 隐身后禁止触发红石机关
+            "vanishNoRedstone": true, // 隐身后禁止触发红石机关
+            "vanishNoTouchEntity": true, // 隐身后禁止触碰实体
+            "vanishNoInteractSound": true, // 隐身后隐藏交互音效
         }
     }
 }
@@ -106,7 +108,7 @@ void registerCmd() {
         ll::command::CommandRegistrar::getInstance().getOrCreateCommand("test", "Test", CommandPermissionLevel::Any);
     cmd.overload().execute([](CommandOrigin const& origin, CommandOutput&) {
         auto* entity = origin.getEntity();
-        if (entity && entity->isType(ActorType::Player)) {
+        if (entity && entity->isPlayer()) {
             auto* player = static_cast<Player*>(entity);
             auto  form   = ll::form::SimpleForm("选择玩家");
             ll::service::getLevel()->forEachPlayer([&form](Player& player2) -> bool {
