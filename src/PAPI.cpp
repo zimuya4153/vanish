@@ -24,27 +24,6 @@ void registerServerPlaceholder(
     if (!func(name, callback, PluginName)) return logger.error("注册服务器PAPI变量 {0} 失败。", name);
 }
 
-void registerServerPlaceholder(
-    std::string const&                                                       name,
-    std::function<std::string(std::unordered_map<std::string, std::string>)> callback,
-    std::string const&                                                       PluginName
-) {
-    auto func =
-        (bool (*)(std::string const&, std::function<std::string(std::unordered_map<std::string, std::string>)>, std::string const&)
-        )
-            GetProcAddress(
-                GetModuleHandle(L"GMLIB.dll"),
-                "?registerServerPlaceholder@PlaceholderAPI@Server@GMLIB@@SA_NAEBV?$basic_string@DU?$char_traits@D@std@@"
-                "V?$allocator@D@2@@std@@V?$function@$$A6A?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@"
-                "std@@V?$unordered_map@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V12@U?$hash@V?$"
-                "basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@U?$equal_to@V?$basic_string@DU?$char_"
-                "traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@"
-                "std@@V?$allocator@D@2@@std@@V12@@std@@@2@@2@@Z@5@0@Z"
-            );
-    if (!func) return logger.error("“注册服务器带参数的PAPI变量函数” 获取失败，无法注册PAPI变量。");
-    if (!func(name, callback, PluginName)) return logger.error("注册服务器带参数的PAPI变量函数 {0} 失败。", name);
-}
-
 void registerPlayerPlaceholder(
     std::string const&                  name,
     std::function<std::string(Player*)> callback,
@@ -58,27 +37,6 @@ void registerPlayerPlaceholder(
     );
     if (!func) return logger.error("“注册玩家PAPI变量函数” 获取失败，无法注册PAPI变量。");
     if (!func(name, callback, PluginName)) return logger.error("注册玩家PAPI变量 {0} 失败。", name);
-}
-
-void registerPlayerPlaceholder(
-    std::string const&                                                                name,
-    std::function<std::string(Player*, std::unordered_map<std::string, std::string>)> callback,
-    std::string const&                                                                PluginName
-) {
-    auto func =
-        (bool (*)(std::string const&, std::function<std::string(Player*, std::unordered_map<std::string, std::string>)>, std::string const&)
-        )
-            GetProcAddress(
-                GetModuleHandle(L"GMLIB.dll"),
-                "?registerPlayerPlaceholder@PlaceholderAPI@Server@GMLIB@@SA_NAEBV?$basic_string@DU?$char_traits@D@std@@"
-                "V?$allocator@D@2@@std@@V?$function@$$A6A?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@"
-                "std@@PEAVPlayer@@V?$unordered_map@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V12@U?"
-                "$hash@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@U?$equal_to@V?$basic_string@DU?"
-                "$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_"
-                "traits@D@std@@V?$allocator@D@2@@std@@V12@@std@@@2@@2@@Z@5@0@Z"
-            );
-    if (!func) return logger.error("“注册玩家带参数的PAPI变量函数” 获取失败，无法注册PAPI变量。");
-    if (!func(name, callback, PluginName)) return logger.error("注册玩家带参数的PAPI变量 {0} 失败。", name);
 }
 
 void unregisterPlaceholder(std::string const& placeholder) {
