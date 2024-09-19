@@ -25,6 +25,7 @@
 #include <mc/server/commands/CommandOrigin.h>
 #include <mc/server/commands/CommandOutput.h>
 #include <mc/server/commands/CommandSelectorBase.h>
+#include <mc/server/commands/standard/ListCommand.h>
 #include <mc/world/ActorRuntimeID.h>
 #include <mc/world/actor/ActorDamageByActorSource.h>
 #include <mc/world/actor/ActorDamageByChildActorSource.h>
@@ -132,8 +133,7 @@ LL_TYPE_INSTANCE_HOOK(
 
 // 播放移动音效
 LL_TYPE_INSTANCE_HOOK(PlayActorMovementSoundHook, HookPriority::Normal, Actor, &Actor::playMovementSound, void) {
-    if (isPlayer() && config.playerConfigs[((Player*)this)->getUuid()].enabled) return;
-    origin();
+    if (!isPlayer() || !config.playerConfigs[((Player*)this)->getUuid()].enabled) origin();
 }
 
 // 播放实体同步音效
@@ -148,8 +148,7 @@ LL_TYPE_INSTANCE_HOOK(
     Block const&                 block,
     bool                         isGlobal
 ) {
-    if (isPlayer() && config.playerConfigs[((Player*)this)->getUuid()].enabled) return;
-    origin(type, pos, block, isGlobal);
+    if (!isPlayer() || !config.playerConfigs[((Player*)this)->getUuid()].enabled) origin(type, pos, block, isGlobal);
 }
 
 // 实体掉落到方块上
@@ -169,54 +168,52 @@ LL_TYPE_INSTANCE_HOOK(
     intercept = false;
 }
 
-// 命令返回结果
+// 修改list命令返回结果
 LL_TYPE_INSTANCE_HOOK(
-    AddCommandMessageHook,
-    HookPriority::Normal,
-    CommandOutput,
-    "?addMessage@CommandOutput@@AEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@"
-    "VCommandOutputParameter@@V?$allocator@VCommandOutputParameter@@@std@@@3@W4CommandOutputMessageType@@@Z",
+    ListCmdExecuteHook,
+    HookPriority::Low,
+    ListCommand,
+    "?execute@ListCommand@@UEBAXAEBVCommandOrigin@@AEAVCommandOutput@@@Z",
     void,
-    std::string&                        msgId,
-    std::vector<CommandOutputParameter> params,
-    CommandOutputMessageType            type
+    CommandOrigin const&,
+    CommandOutput& output
 ) {
-    std::vector<std::string> playerNames;
-    ll::service::getLevel()->forEachPlayer([&playerNames](Player& player) {
-        if (!config.playerConfigs[player.getUuid()].enabled) playerNames.push_back(player.getRealName());
+    std::string playerNameList = "";
+    auto        playerCount    = 0;
+    bool        first          = true;
+    ll::service::getLevel()->forEachPlayer([&playerNameList, &playerCount, &first](Player& player) -> bool {
+        if (!config.playerConfigs[player.getUuid()].enabled) {
+            if (!first) playerNameList += ", ";
+            playerNameList += player.getRealName();
+            fmt::join(playerNameList, ", ");
+            playerCount++;
+        }
         return true;
     });
-    if (msgId == "commands.players.list") {
-        params[0].str = std::to_string(playerNames.size());
-    }
-    if (msgId == "commands.players.list.names") {
-        std::ostringstream oss;
-        bool               first = true;
-        for (const auto& str : playerNames) {
-            if (!first) oss << ", ";
-            oss << str;
-            first = false;
-        }
-        params[0].str = oss.str();
-    }
-    origin(msgId, params, type);
+    output.success(
+        "commands.players.list",
+        {CommandOutputParameter(playerCount),
+         // 摘抄自: https://github.com/GroupMountain/GMLIB/blob/main/src/Server/LevelAPI.cc#L839-L842
+         CommandOutputParameter(ll::memory::dAccess<int>(ll::service::getServerNetworkHandler().as_ptr(), 200 * 4))}
+    );
+    output.success("commands.players.list.names", {CommandOutputParameter(playerNameList)});
 }
 
 // 修复玩家切换游戏模式问题
 LL_TYPE_INSTANCE_HOOK(
     SetPlayerGameTypeHook,
-    HookPriority::Normal,
+    HookPriority::Low,
     Player,
     "?setPlayerGameType@Player@@UEAAXW4GameType@@@Z",
     void,
     GameType gameType
 ) {
+    origin(gameType);
     if (config.playerConfigs[getUuid()].enabled) {
         SetPlayerGameTypePacket packet;
         packet.mPlayerGameType = gameType;
         sendNetworkPacket(packet);
     }
-    origin(gameType);
 }
 
 // 地图是否显示玩家
@@ -251,8 +248,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (config.playerConfigs[player.getUuid()].enabled) return;
-    origin(player);
+    if (!config.playerConfigs[player.getUuid()].enabled) origin(player);
 }
 
 // 玩家打开潜影盒
@@ -264,8 +260,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (config.playerConfigs[player.getUuid()].enabled) return;
-    origin(player);
+    if (!config.playerConfigs[player.getUuid()].enabled) origin(player);
 }
 
 // 玩家关闭潜影盒
@@ -277,8 +272,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (config.playerConfigs[player.getUuid()].enabled) return;
-    origin(player);
+    if (!config.playerConfigs[player.getUuid()].enabled) origin(player);
 }
 
 // 玩家打开木桶
@@ -290,8 +284,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (config.playerConfigs[player.getUuid()].enabled) return;
-    origin(player);
+    if (!config.playerConfigs[player.getUuid()].enabled) origin(player);
 }
 
 // 玩家关闭木桶
@@ -303,8 +296,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (config.playerConfigs[player.getUuid()].enabled) return;
-    origin(player);
+    if (!config.playerConfigs[player.getUuid()].enabled) origin(player);
 }
 
 // 玩家切换维度
@@ -319,11 +311,9 @@ LL_TYPE_INSTANCE_HOOK(
     const Dimension&              dimension
 ) {
     origin(player, toDimension, dimension);
-    scheduler.add<ll::schedule::DelayTask>(ll::chrono_literals::operator""_tick(20 * 5), [&player]() -> void {
+    scheduler.add<ll::schedule::DelayTask>(ll::chrono::ticks(20 * 5), [&player]() -> void {
         auto& playerConfig = config.playerConfigs[player.getUuid()];
-        if (playerConfig.enabled && playerConfig.vanishBossbar) {
-            setPlayerBossbar(player, true);
-        }
+        if (playerConfig.enabled && playerConfig.vanishBossbar) setPlayerBossbar(player, true);
     });
 }
 
@@ -443,8 +433,7 @@ LL_TYPE_INSTANCE_HOOK(
 ) {
     if (auto level = ll::service::getLevel(); level.has_value()) {
         auto* entity = level->fetchEntity(mEntityID);
-        if (entity && entity->isPlayer()
-            && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled) {
+        if (entity && entity->isPlayer() && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled) {
             mEntityID         = ActorUniqueID();
             mEntityType       = ActorType::None;
             mEntityCategories = ActorCategory::None;
@@ -469,8 +458,7 @@ LL_TYPE_INSTANCE_HOOK(
 ) {
     if (auto level = ll::service::getLevel(); level.has_value()) {
         auto* entity = level->fetchEntity(mEntityID);
-        if (entity && entity->isPlayer()
-            && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled) {
+        if (entity && entity->isPlayer() && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled) {
             mDamagingActorId         = ActorUniqueID();
             mDamagingActorType       = ActorType::None;
             mDamagingActorCategories = ActorCategory::None;
@@ -488,7 +476,7 @@ struct RNS2_SendParameters {
 };
 enum MessageIdentifiers : uchar { UnconnectedPong = 28 };
 // 发送通信数据
-// 伪造部分摘抄至
+// 伪造部分摘抄自
 // https://github.com/EndstoneMC/endstone/blob/main/src/endstone_runtime/bedrock/deps/raknet/raknet_socket2.cpp
 LL_TYPE_STATIC_HOOK(
     SendWindowsLinux360NoVDPHook,
@@ -548,10 +536,9 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Actor* entity
 ) {
-    if (entity && entity->isPlayer()
-        && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled)
-        return;
-    origin(entity);
+    if (entity == nullptr || !entity->isPlayer()
+        || !config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled)
+        origin(entity);
 }
 
 // 目标选择器
@@ -565,13 +552,11 @@ LL_TYPE_INSTANCE_HOOK(
 ) {
     auto result = origin(commandOrigin);
     if (auto* entity = commandOrigin.getEntity();
-        entity && entity->isPlayer()
-        && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled)
+        entity && entity->isPlayer() && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled)
         return result;
     if (commandOrigin.getOriginType() != CommandOriginType::DedicatedServer && result) {
         for (auto& actor : *result) {
-            if (actor->isPlayer()
-                && config.playerConfigs[static_cast<Player*>(actor)->getUuid()].enabled)
+            if (actor->isPlayer() && config.playerConfigs[static_cast<Player*>(actor)->getUuid()].enabled)
                 result->erase(std::remove(result->begin(), result->end(), actor), result->end());
         }
     }
@@ -626,8 +611,7 @@ LL_TYPE_INSTANCE_HOOK(
     bool                             isBabyMob,
     bool                             isGlobal
 ) {
-    if (intercept) return;
-    origin(region, type, pos, data, entityType, isBabyMob, isGlobal);
+    if (!intercept) origin(region, type, pos, data, entityType, isBabyMob, isGlobal);
 }
 
 // 广播声音
@@ -645,8 +629,7 @@ LL_TYPE_INSTANCE_HOOK(
     bool                             isBabyMob,
     bool                             isGlobal
 ) {
-    if (intercept) return;
-    origin(dimension, type, pos, data, identifier, isBabyMob, isGlobal);
+    if (!intercept) origin(dimension, type, pos, data, identifier, isBabyMob, isGlobal);
 }
 
 // 广播声音
@@ -664,8 +647,7 @@ LL_TYPE_INSTANCE_HOOK(
     bool                             isBabyMob,
     bool                             isGlobal
 ) {
-    if (intercept) return;
-    origin(region, type, pos, block, entityType, isBabyMob, isGlobal);
+    if (!intercept) origin(region, type, pos, block, entityType, isBabyMob, isGlobal);
 }
 
 // 局部广播事件
@@ -680,8 +662,7 @@ LL_TYPE_INSTANCE_HOOK(
     Vec3 const& pos,
     int         a4
 ) {
-    if (intercept) return;
-    origin(a1, type, pos, a4);
+    if (!intercept) origin(a1, type, pos, a4);
 }
 
 // 全局广播事件
@@ -696,8 +677,7 @@ LL_TYPE_INSTANCE_HOOK(
     int                                  a3,
     UserEntityIdentifierComponent const* a4
 ) {
-    if (intercept) return;
-    origin(type, pos, a3, a4);
+    if (!intercept) origin(type, pos, a3, a4);
 }
 
 // 播放声音
@@ -714,8 +694,7 @@ LL_TYPE_INSTANCE_HOOK(
     bool                             isBabyMob,
     bool                             isGlobal
 ) {
-    if (intercept) return;
-    origin(type, pos, data, entityType, isBabyMob, isGlobal);
+    if (!intercept) origin(type, pos, data, entityType, isBabyMob, isGlobal);
 }
 
 // 处理玩家动作
@@ -749,8 +728,7 @@ LL_TYPE_INSTANCE_HOOK(
     uchar       face,
     Vec3 const& clickPos
 ) {
-    if (entity.isPlayer() && config.playerConfigs[static_cast<Player&>(entity).getUuid()].enabled)
-        intercept = true;
+    if (entity.isPlayer() && config.playerConfigs[static_cast<Player&>(entity).getUuid()].enabled) intercept = true;
     auto result = origin(entity, x, y, z, face, clickPos);
     intercept   = false;
     return result;
@@ -876,9 +854,8 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (config.playerConfigs[player.getUuid()].enabled && config.playerConfigs[player.getUuid()].vanishNoTouchEntity)
-        return;
-    origin(player);
+    if (!config.playerConfigs[player.getUuid()].enabled || !config.playerConfigs[player.getUuid()].vanishNoTouchEntity)
+        origin(player);
 }
 
 // 实体推动
@@ -926,7 +903,13 @@ LL_TYPE_INSTANCE_HOOK(
     origin(owner, other, pushSelfOnly);
 }
 
-LL_STATIC_HOOK(IsPickableHook, HookPriority::Normal, "?isPickable@ActorCollision@@YA_NAEBVEntityContext@@@Z", bool, EntityContext const& context) {
+LL_STATIC_HOOK(
+    IsPickableHook,
+    HookPriority::Normal,
+    "?isPickable@ActorCollision@@YA_NAEBVEntityContext@@@Z",
+    bool,
+    EntityContext const& context
+) {
     if (auto actor = Actor::tryGetFromEntity(context, true)) {
         if (actor->isPlayer()) {
             auto player = static_cast<const Player*>(actor);
@@ -945,7 +928,7 @@ struct Impl {
         PlayActorMovementSoundHook,
         PlayActorSynchronizedSoundHook,
         ActorFallOnHook,
-        AddCommandMessageHook,
+        ListCmdExecuteHook,
         SetPlayerGameTypeHook,
         CanBeSeenOnMapHook,
         StartOpenChestHook,
