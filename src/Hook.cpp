@@ -68,13 +68,10 @@ std::optional<mce::UUID> getUuid(ActorRuntimeID const& runtimeId) {
     if (auto level = ll::service::getLevel(); level.has_value()) return level->getRuntimePlayer(runtimeId)->getUuid();
     return std::nullopt;
 }
-Vanish::PlayerConfig getConfig(mce::UUID const& uuid) {
-    return config.playerConfigs.contains(uuid) ? getConfig(uuid) : Vanish::PlayerConfig();
-}
 
 // 玩家create包
 LL_TYPE_INSTANCE_HOOK(TryCreateActorPacketHook, HookPriority::Normal, Player, "?tryCreateAddActorPacket@Player@@UEAA?AV?$unique_ptr@VAddActorBasePacket@@U?$default_delete@VAddActorBasePacket@@@std@@@std@@XZ", std::unique_ptr<AddActorBasePacket>) {
-    return getConfig(getUuid()).enabled ? nullptr : origin();
+    return config.playerConfigs[getUuid()].enabled ? nullptr : origin();
 }
 
 // 发送数据包给客户端
@@ -93,7 +90,7 @@ LL_TYPE_INSTANCE_HOOK(
             auto textPacket = static_cast<TextPacket const&>(packet);
             if (textPacket.mType == TextPacketType::Translate && textPacket.mParams.size() <= 2) {
                 auto uuid = getUuid(textPacket.mParams[0]);
-                if (uuid.has_value() && getConfig(uuid.value()).enabled) return;
+                if (uuid.has_value() && config.playerConfigs[uuid.value()].enabled) return;
             }
         }
     } catch (...) {}
@@ -114,7 +111,7 @@ LL_TYPE_INSTANCE_HOOK(
             auto textPacket = static_cast<TextPacket const&>(packet);
             if (textPacket.mType == TextPacketType::Translate && textPacket.mParams.size() <= 2) {
                 auto uuid = getUuid(textPacket.mParams[0]);
-                if (uuid.has_value() && getConfig(uuid.value()).enabled) return;
+                if (uuid.has_value() && config.playerConfigs[uuid.value()].enabled) return;
             }
         }
     } catch (...) {}
@@ -130,13 +127,13 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     PlayerListEntry&& entry
 ) {
-    if (mAction == PlayerListPacketType::Add && getConfig(entry.mUuid).enabled) return;
+    if (mAction == PlayerListPacketType::Add && config.playerConfigs[entry.mUuid].enabled) return;
     origin(std::move(entry));
 }
 
 // 播放移动音效
 LL_TYPE_INSTANCE_HOOK(PlayActorMovementSoundHook, HookPriority::Normal, Actor, &Actor::playMovementSound, void) {
-    if (!isPlayer() || !getConfig(((Player*)this)->getUuid()).enabled) origin();
+    if (!isPlayer() || !config.playerConfigs[((Player*)this)->getUuid()].enabled) origin();
 }
 
 // 播放实体同步音效
@@ -151,7 +148,7 @@ LL_TYPE_INSTANCE_HOOK(
     Block const&                 block,
     bool                         isGlobal
 ) {
-    if (!isPlayer() || !getConfig(((Player*)this)->getUuid()).enabled) origin(type, pos, block, isGlobal);
+    if (!isPlayer() || !config.playerConfigs[((Player*)this)->getUuid()].enabled) origin(type, pos, block, isGlobal);
 }
 
 // 实体掉落到方块上
@@ -166,7 +163,7 @@ LL_TYPE_INSTANCE_HOOK(
     Actor&          entity,
     float           fallDistance
 ) {
-    if (entity.isPlayer() && getConfig(((Player&)entity).getUuid()).enabled) intercept = true;
+    if (entity.isPlayer() && config.playerConfigs[((Player&)entity).getUuid()].enabled) intercept = true;
     origin(region, pos, entity, fallDistance);
     intercept = false;
 }
@@ -185,7 +182,7 @@ LL_TYPE_INSTANCE_HOOK(
     auto        playerCount    = 0;
     bool        first          = true;
     ll::service::getLevel()->forEachPlayer([&playerNameList, &playerCount, &first](Player& player) -> bool {
-        if (!getConfig(player.getUuid()).enabled) {
+        if (!config.playerConfigs[player.getUuid()].enabled) {
             if (!first) playerNameList += ", ";
             playerNameList += player.getRealName();
             fmt::join(playerNameList, ", ");
@@ -212,7 +209,7 @@ LL_TYPE_INSTANCE_HOOK(
     GameType gameType
 ) {
     origin(gameType);
-    if (getConfig(getUuid()).enabled) {
+    if (config.playerConfigs[getUuid()].enabled) {
         SetPlayerGameTypePacket packet;
         packet.mPlayerGameType = gameType;
         sendNetworkPacket(packet);
@@ -221,7 +218,7 @@ LL_TYPE_INSTANCE_HOOK(
 
 // 地图是否显示玩家
 LL_TYPE_INSTANCE_HOOK(CanBeSeenOnMapHook, HookPriority::Normal, Player, &Player::canBeSeenOnMap, bool) {
-    return getConfig(getUuid()).enabled ? false : origin();
+    return config.playerConfigs[getUuid()].enabled ? false : origin();
 }
 
 // 玩家打开箱子
@@ -233,7 +230,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (getConfig(player.getUuid()).enabled) {
+    if (config.playerConfigs[player.getUuid()].enabled) {
         static_cast<RandomizableBlockActorFillingContainer*>(this)->startOpen(player);
         if (*((uint64_t*)this + 54) && (*((uint64_t*)this + 396) & 1) != 0)
             static_cast<RandomizableBlockActorFillingContainer*>(this + 240)->startOpen(player);
@@ -251,7 +248,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (!getConfig(player.getUuid()).enabled) origin(player);
+    if (!config.playerConfigs[player.getUuid()].enabled) origin(player);
 }
 
 // 玩家打开潜影盒
@@ -263,7 +260,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (!getConfig(player.getUuid()).enabled) origin(player);
+    if (!config.playerConfigs[player.getUuid()].enabled) origin(player);
 }
 
 // 玩家关闭潜影盒
@@ -275,7 +272,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (!getConfig(player.getUuid()).enabled) origin(player);
+    if (!config.playerConfigs[player.getUuid()].enabled) origin(player);
 }
 
 // 玩家打开木桶
@@ -287,7 +284,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (!getConfig(player.getUuid()).enabled) origin(player);
+    if (!config.playerConfigs[player.getUuid()].enabled) origin(player);
 }
 
 // 玩家关闭木桶
@@ -299,7 +296,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (!getConfig(player.getUuid()).enabled) origin(player);
+    if (!config.playerConfigs[player.getUuid()].enabled) origin(player);
 }
 
 // 玩家切换维度
@@ -315,14 +312,14 @@ LL_TYPE_INSTANCE_HOOK(
 ) {
     origin(player, toDimension, dimension);
     scheduler.add<ll::schedule::DelayTask>(ll::chrono::ticks(20 * 5), [&player]() -> void {
-        auto playerConfig = getConfig(player.getUuid());
+        auto& playerConfig = config.playerConfigs[player.getUuid()];
         if (playerConfig.enabled && playerConfig.vanishBossbar) setPlayerBossbar(player, true);
     });
 }
 
 // 玩家能否睡觉
 LL_TYPE_INSTANCE_HOOK(PlayerCanSleepHook, HookPriority::Normal, Player, &Player::canSleep, bool) {
-    return getConfig(getUuid()).enabled ? false : origin();
+    return config.playerConfigs[getUuid()].enabled ? false : origin();
 }
 
 // 玩家捡起物品
@@ -336,8 +333,8 @@ LL_TYPE_INSTANCE_HOOK(
     int    orgCount,
     int    favoredSlot
 ) {
-    return itemActor.hasCategory(ActorCategory::Item) && getConfig(getUuid()).enabled
-                && getConfig(getUuid()).vanishNoTakeItem
+    return itemActor.hasCategory(ActorCategory::Item) && config.playerConfigs[getUuid()].enabled
+                && config.playerConfigs[getUuid()].vanishNoTakeItem
              ? false
              : origin(itemActor, orgCount, favoredSlot);
 }
@@ -352,8 +349,8 @@ LL_TYPE_INSTANCE_HOOK(
     Player& player,
     bool    isSenderAuthority
 ) {
-    if (type == ComplexInventoryTransaction::Type::NormalTransaction && getConfig(player.getUuid()).enabled
-        && getConfig(player.getUuid()).vanishNoDropItem) {
+    if (type == ComplexInventoryTransaction::Type::NormalTransaction && config.playerConfigs[player.getUuid()].enabled
+        && config.playerConfigs[player.getUuid()].vanishNoDropItem) {
         auto& actions =
             data.getActions(InventorySource(InventorySourceType::ContainerInventory, ContainerID::Inventory));
         InventorySlotPacket(
@@ -376,15 +373,15 @@ LL_TYPE_INSTANCE_HOOK(
     ItemStackNetResult,
     ItemStackRequestAction& requestAction
 ) {
-    if (requestAction.mActionType == ItemStackRequestActionType::Drop && getConfig(mPlayer.getUuid()).enabled
-        && getConfig(mPlayer.getUuid()).vanishNoDropItem)
+    if (requestAction.mActionType == ItemStackRequestActionType::Drop && config.playerConfigs[mPlayer.getUuid()].enabled
+        && config.playerConfigs[mPlayer.getUuid()].vanishNoDropItem)
         return ItemStackNetResult::Error;
     return origin(requestAction);
 }
 
 // 实体是否隐身
 LL_TYPE_INSTANCE_HOOK(PlayerIsInvisible, HookPriority::Normal, Actor, "?isInvisible@Actor@@UEBA_NXZ", bool) {
-    return isPlayer() ? getConfig(((Player*)this)->getUuid()).enabled : origin();
+    return isPlayer() ? config.playerConfigs[((Player*)this)->getUuid()].enabled : origin();
 }
 
 // 设置实体隐身
@@ -416,7 +413,7 @@ LL_TYPE_INSTANCE_HOOK(
     void
 ) {
     origin();
-    auto playerConfig = getConfig(getUuid());
+    auto& playerConfig = config.playerConfigs[getUuid()];
     if (playerConfig.enabled && playerConfig.vanishBossbar) setPlayerBossbar(*this, true);
 }
 
@@ -436,7 +433,7 @@ LL_TYPE_INSTANCE_HOOK(
 ) {
     if (auto level = ll::service::getLevel(); level.has_value()) {
         auto* entity = level->fetchEntity(mEntityID);
-        if (entity && entity->isPlayer() && getConfig(static_cast<Player*>(entity)->getUuid()).enabled) {
+        if (entity && entity->isPlayer() && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled) {
             mEntityID         = ActorUniqueID();
             mEntityType       = ActorType::None;
             mEntityCategories = ActorCategory::None;
@@ -461,7 +458,7 @@ LL_TYPE_INSTANCE_HOOK(
 ) {
     if (auto level = ll::service::getLevel(); level.has_value()) {
         auto* entity = level->fetchEntity(mEntityID);
-        if (entity && entity->isPlayer() && getConfig(static_cast<Player*>(entity)->getUuid()).enabled) {
+        if (entity && entity->isPlayer() && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled) {
             mDamagingActorId         = ActorUniqueID();
             mDamagingActorType       = ActorType::None;
             mDamagingActorCategories = ActorCategory::None;
@@ -507,7 +504,7 @@ LL_TYPE_STATIC_HOOK(
 
                 int playerCount = 0;
                 level->forEachPlayer([&playerCount](Player& player) -> bool {
-                    if (!getConfig(player.getUuid()).enabled) playerCount++;
+                    if (!config.playerConfigs[player.getUuid()].enabled) playerCount++;
                     return true;
                 });
                 parts[4] = std::to_string(playerCount);
@@ -540,7 +537,7 @@ LL_TYPE_INSTANCE_HOOK(
     Actor* entity
 ) {
     if (entity == nullptr || !entity->isPlayer()
-        || !getConfig(static_cast<Player*>(entity)->getUuid()).enabled)
+        || !config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled)
         origin(entity);
 }
 
@@ -555,11 +552,11 @@ LL_TYPE_INSTANCE_HOOK(
 ) {
     auto result = origin(commandOrigin);
     if (auto* entity = commandOrigin.getEntity();
-        entity && entity->isPlayer() && getConfig(static_cast<Player*>(entity)->getUuid()).enabled)
+        entity && entity->isPlayer() && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled)
         return result;
     if (commandOrigin.getOriginType() != CommandOriginType::DedicatedServer && result) {
         for (auto& actor : *result) {
-            if (actor->isPlayer() && getConfig(static_cast<Player*>(actor)->getUuid()).enabled)
+            if (actor->isPlayer() && config.playerConfigs[static_cast<Player*>(actor)->getUuid()].enabled)
                 result->erase(std::remove(result->begin(), result->end(), actor), result->end());
         }
     }
@@ -579,7 +576,7 @@ LL_TYPE_INSTANCE_HOOK(
     std::function<bool(class Player const&)> func
 ) {
     return origin(pos, maxDist, a3, [&func](Player const& player) -> bool {
-        return getConfig(player.getUuid()).enabled ? false : func(player);
+        return config.playerConfigs[player.getUuid()].enabled ? false : func(player);
     });
 }
 
@@ -593,7 +590,7 @@ LL_TYPE_INSTANCE_HOOK(
     Level*  level,
     Player* player
 ) {
-    if (player && getConfig(player->getUuid()).enabled) intercept = true;
+    if (player && config.playerConfigs[player->getUuid()].enabled) intercept = true;
     auto result = origin(level, player);
     intercept   = false;
     return result;
@@ -711,7 +708,7 @@ LL_TYPE_INSTANCE_HOOK(
     PlayerActionPacket const& packet
 ) {
     if (auto player = getServerPlayer(source, packet.mClientSubId);
-        player.has_value() && getConfig(player->getUuid()).enabled)
+        player.has_value() && config.playerConfigs[player->getUuid()].enabled)
         intercept = true;
     origin(source, packet);
     intercept = false;
@@ -731,7 +728,7 @@ LL_TYPE_INSTANCE_HOOK(
     uchar       face,
     Vec3 const& clickPos
 ) {
-    if (entity.isPlayer() && getConfig(static_cast<Player&>(entity).getUuid()).enabled) intercept = true;
+    if (entity.isPlayer() && config.playerConfigs[static_cast<Player&>(entity).getUuid()].enabled) intercept = true;
     auto result = origin(entity, x, y, z, face, clickPos);
     intercept   = false;
     return result;
@@ -747,7 +744,7 @@ LL_STATIC_HOOK(
     BlockPos const& pos,
     int             face
 ) {
-    if (getConfig(player.getUuid()).enabled) intercept = true;
+    if (config.playerConfigs[player.getUuid()].enabled) intercept = true;
     origin(player, pos, face);
     intercept = false;
 }
@@ -762,7 +759,7 @@ LL_TYPE_INSTANCE_HOOK(
     BlockPos const& pos,
     uchar           face
 ) {
-    if (getConfig(getPlayer().getUuid()).enabled) intercept = true;
+    if (config.playerConfigs[getPlayer().getUuid()].enabled) intercept = true;
     auto result = origin(pos, face);
     intercept   = false;
     return result;
@@ -777,8 +774,8 @@ LL_TYPE_INSTANCE_HOOK(
     bool,
     AbilitiesIndex abilityIndex
 ) {
-    return abilityIndex == AbilitiesIndex::DoorsAndSwitches && getConfig(getUuid()).enabled
-                && getConfig(getUuid()).vanishNoRedstone
+    return abilityIndex == AbilitiesIndex::DoorsAndSwitches && config.playerConfigs[getUuid()].enabled
+                && config.playerConfigs[getUuid()].vanishNoRedstone
              ? false
              : origin(abilityIndex);
 }
@@ -796,7 +793,7 @@ LL_TYPE_INSTANCE_HOOK(
 ) {
     if (entity.isPlayer()) {
         auto& player = static_cast<Player&>(entity);
-        if (getConfig(player.getUuid()).enabled && getConfig(player.getUuid()).vanishNoRedstone)
+        if (config.playerConfigs[player.getUuid()].enabled && config.playerConfigs[player.getUuid()].vanishNoRedstone)
             return false;
     }
     return origin(region, block, entity);
@@ -804,7 +801,7 @@ LL_TYPE_INSTANCE_HOOK(
 
 // 物品使用
 LL_TYPE_INSTANCE_HOOK(ItemUseHook, HookPriority::Normal, ItemStack, &ItemStack::use, ItemStack&, Player& player) {
-    if (getConfig(player.getUuid()).enabled) intercept = true;
+    if (config.playerConfigs[player.getUuid()].enabled) intercept = true;
     auto& result = origin(player);
     intercept    = false;
     return result;
@@ -823,8 +820,8 @@ LL_TYPE_INSTANCE_HOOK(
     Vec3 const&     clickPos,
     Block const*    block
 ) {
-    if (getConfig(getPlayer().getUuid()).enabled
-        && getConfig(getPlayer().getUuid()).vanishNoInteractSound)
+    if (config.playerConfigs[getPlayer().getUuid()].enabled
+        && config.playerConfigs[getPlayer().getUuid()].vanishNoInteractSound)
         intercept = true;
     auto result = origin(item, blockPos, face, clickPos, block);
     intercept   = false;
@@ -842,7 +839,7 @@ LL_TYPE_INSTANCE_HOOK(
     AnvilDamagePacket const& packet
 ) {
     if (auto player = getServerPlayer(source, packet.mClientSubId)) {
-        if (getConfig(player->getUuid()).enabled) intercept = true;
+        if (config.playerConfigs[player->getUuid()].enabled) intercept = true;
     }
     origin(source, packet);
     intercept = false;
@@ -857,7 +854,7 @@ LL_TYPE_INSTANCE_HOOK(
     void,
     Player& player
 ) {
-    if (!getConfig(player.getUuid()).enabled || !getConfig(player.getUuid()).vanishNoTouchEntity)
+    if (!config.playerConfigs[player.getUuid()].enabled || !config.playerConfigs[player.getUuid()].vanishNoTouchEntity)
         origin(player);
 }
 
@@ -873,8 +870,8 @@ LL_TYPE_INSTANCE_HOOK(
 ) {
     if (owner.isPlayer()) {
         auto& player = static_cast<Player&>(owner);
-        if (getConfig(player.getUuid()).enabled
-            && getConfig(player.getUuid()).vanishNoTouchEntity)
+        if (config.playerConfigs[player.getUuid()].enabled
+            && config.playerConfigs[player.getUuid()].vanishNoTouchEntity)
             return;
     }
     origin(owner, vec);
@@ -893,14 +890,14 @@ LL_TYPE_INSTANCE_HOOK(
 ) {
     if (owner.isPlayer()) {
         auto& player = static_cast<Player&>(owner);
-        if (getConfig(player.getUuid()).enabled
-            && getConfig(player.getUuid()).vanishNoTouchEntity)
+        if (config.playerConfigs[player.getUuid()].enabled
+            && config.playerConfigs[player.getUuid()].vanishNoTouchEntity)
             return;
     }
     if (other.isPlayer()) {
         auto& player = static_cast<Player&>(other);
-        if (getConfig(player.getUuid()).enabled
-            && getConfig(player.getUuid()).vanishNoTouchEntity)
+        if (config.playerConfigs[player.getUuid()].enabled
+            && config.playerConfigs[player.getUuid()].vanishNoTouchEntity)
             return;
     }
     origin(owner, other, pushSelfOnly);
@@ -916,7 +913,7 @@ LL_STATIC_HOOK(
     if (auto actor = Actor::tryGetFromEntity(context, true)) {
         if (actor->isPlayer()) {
             auto player = static_cast<const Player*>(actor);
-            if (getConfig(player->getUuid()).enabled) return false;
+            if (config.playerConfigs[player->getUuid()].enabled) return false;
         }
     }
     return origin(context);
