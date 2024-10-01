@@ -10,6 +10,7 @@
 #include <mc/deps/raknet/RNS2_Windows_Linux_360.h>
 #include <mc/deps/raknet/SystemAddress.h>
 #include <mc/entity/components/PushableComponent.h>
+#include <mc/world/events/gameevents/VibrationListener.h>
 #include <mc/entity/utilities/ActorCollision.h>
 #include <mc/network/ServerNetworkHandler.h>
 #include <mc/network/packet/AddActorBasePacket.h>
@@ -919,6 +920,38 @@ LL_STATIC_HOOK(
     return origin(context);
 }
 
+LL_TYPE_INSTANCE_HOOK(
+    VibrationHook,
+    HookPriority::Normal,
+    VibrationListener,
+    &VibrationListener::_tryAdvanceInFlightVibration,
+    bool,
+    BlockSource& region
+) {
+    auto* entity = region.getLevel().fetchEntity(*((ActorUniqueID*)this + 17), false);
+    if (entity != nullptr && entity->isPlayer()
+        && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled)
+        return false;
+    return origin(region);
+}
+
+LL_TYPE_INSTANCE_HOOK(
+    VibrationSpawnParticleHook,
+    HookPriority::Normal,
+    VibrationListener,
+    &VibrationListener::_requestVibrationParticle,
+    void,
+    BlockSource&    region,
+    BlockPos const& pos,
+    float           a3
+) {
+    auto* entity = region.getLevel().fetchEntity(*((ActorUniqueID*)this + 17), false);
+    if (entity != nullptr && entity->isPlayer()
+        && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled)
+        return;
+    origin(region, pos, a3);
+}
+
 struct Impl {
     ll::memory::HookRegistrar<
         TryCreateActorPacketHook,
@@ -970,7 +1003,9 @@ struct Impl {
         PlayerTouchExperienceOrbHook,
         PushableComponentPushHook,
         PushableComponentPushHook2,
-        IsPickableHook>
+        IsPickableHook,
+        VibrationHook,
+        VibrationSpawnParticleHook>
         hook;
 };
 

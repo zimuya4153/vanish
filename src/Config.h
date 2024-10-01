@@ -17,6 +17,14 @@ struct PlayerConfig {
     bool        vanishNoRedstone      = true;                  // 隐身后禁止触发红石机关
     bool        vanishNoTouchEntity   = true;                  // 隐身后禁止触碰实体
     bool        vanishNoInteractSound = true;                  // 隐身后隐藏交互音效
+    
+    bool        operator==(const PlayerConfig& other) const {
+        return enabled == other.enabled && appearPromptJoin == other.appearPromptJoin
+            && vanishPromptExit == other.vanishPromptExit && vanishBossbar == other.vanishBossbar
+            && vanishBossbarText == other.vanishBossbarText && vanishNoTakeItem == other.vanishNoTakeItem
+            && vanishNoDropItem == other.vanishNoDropItem && vanishNoRedstone == other.vanishNoRedstone
+            && vanishNoTouchEntity == other.vanishNoTouchEntity && vanishNoInteractSound == other.vanishNoInteractSound;
+    }
 };
 struct Config {
     int                                         version     = 2;          // 配置文件版本
