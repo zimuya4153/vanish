@@ -17,7 +17,7 @@ static std::unique_ptr<Entry> instance;
 Entry& Entry::getInstance() { return *instance; }
 
 bool Entry::load() {
-    logger.info(fmt::format(fmt::fg(fmt::color::light_green), "Loading..."));
+    logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "Loading..."));
     auto path = getSelf().getConfigDir() / "config.json";
     try {
         ll::config::loadConfig(config, path);
@@ -38,7 +38,7 @@ bool Entry::load() {
 }
 
 bool Entry::enable() {
-    logger.info(fmt::format(fmt::fg(fmt::color::light_green), "Enableing..."));
+    logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "Enableing..."));
     registerCommands();
     HookCall(true);
     if (config.enabledPAPI) PAPICall(true);
