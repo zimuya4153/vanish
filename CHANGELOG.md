@@ -1,5 +1,8 @@
 # 更新日志
 
+## 2.0.4
+- 修复list命令问题
+
 ## 2.0.3
 - 兼容[高亮显示](https://https://github.com/zimuya4153/LSE_Waila)
 - 修改hook启动/关闭方式

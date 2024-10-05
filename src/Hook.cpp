@@ -185,8 +185,8 @@ LL_TYPE_INSTANCE_HOOK(
     ll::service::getLevel()->forEachPlayer([&playerNameList, &playerCount, &first](Player& player) -> bool {
         if (!config.playerConfigs[player.getUuid()].enabled) {
             if (!first) playerNameList += ", ";
+            first = false;
             playerNameList += player.getRealName();
-            fmt::join(playerNameList, ", ");
             playerCount++;
         }
         return true;
