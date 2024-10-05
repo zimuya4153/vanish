@@ -2,36 +2,49 @@
 
 #include "Entry.h"
 #include "Global.h"
-
 #include <ll/api/Config.h>
 #include <ll/api/command/CommandHandle.h>
 #include <ll/api/command/CommandRegistrar.h>
+#include <ll/api/event/EventBus.h>
+#include <ll/api/event/command/ExecuteCommandEvent.h>
 #include <ll/api/form/CustomForm.h>
+#include <ll/api/service/Bedrock.h>
 #include <mc/entity/utilities/ActorType.h>
 #include <mc/server/commands/CommandOrigin.h>
 #include <mc/server/commands/CommandOutput.h>
 #include <mc/server/commands/CommandPermissionLevel.h>
 #include <mc/server/commands/CommandSelector.h>
+#include <unordered_map>
 
 void registerCommands() {
-    auto& cmd = ll::command::CommandRegistrar::getInstance().getOrCreateCommand(
-        config.command,
-        "隐身",
-        static_cast<CommandPermissionLevel>(config.permMode ? 0 : 1)
+    thread_local std::string runCommandTemp = config.command;
+    ll::event::EventBus::getInstance().emplaceListener<ll::event::ExecutingCommandEvent>(
+        [](ll::event::ExecutingCommandEvent& event) -> void {
+            runCommandTemp = event.commandContext().mCommand;
+            if (runCommandTemp.at(0) == '/') runCommandTemp.erase(0, 1);
+        }
     );
+    auto& cmd = ll::command::CommandRegistrar::getInstance()
+                    .getOrCreateCommand(config.command, "隐身", CommandPermissionLevel::Any);
     if (!config.alias.empty()) cmd.alias(config.alias);
     struct CommandParam {
         enum action { add, remove } action;
         CommandSelector<Player> player;
     };
-    cmd.overload().execute([&](CommandOrigin const& origin, CommandOutput& output) -> void {
+    cmd.overload().execute([](CommandOrigin const& origin, CommandOutput& output) -> void {
         auto* entity = origin.getEntity();
-        if (entity == nullptr || !entity->isPlayer()) return output.error("非玩家不可执行");
-        if (config.permMode
-            && std::find(config.permPlayers.begin(), config.permPlayers.end(), static_cast<Player*>(entity)->getUuid())
-                   == config.permPlayers.end())
-            return output.error("您没有权限使用该命令");
-        auto* player       = static_cast<Player*>(entity);
+        if (entity == nullptr || !entity->isPlayer())
+            return output.error("commands.generic.unknown", {CommandOutputParameter(runCommandTemp)});
+        auto* player = static_cast<Player*>(entity);
+        // clang-format off
+        if (!(
+            (!config.permMode && player->isOperator())
+            || (
+                config.permMode
+                && std::count(config.permPlayers.begin(), config.permPlayers.end(), player->getUuid()) != 0
+            )
+        )) return output.error("commands.generic.unknown", {CommandOutputParameter(runCommandTemp)});
+        // clang-format on
         auto& playerConfig = config.playerConfigs[player->getUuid()];
         auto  form         = ll::form::CustomForm();
         form.setTitle("隐身菜单");
@@ -78,9 +91,9 @@ void registerCommands() {
     });
     if (config.permMode)
         cmd.overload<CommandParam>().required("action").required("player").execute(
-            [&](CommandOrigin const& origin, CommandOutput& output, CommandParam const& result) -> void {
+            [](CommandOrigin const& origin, CommandOutput& output, CommandParam const& result) -> void {
                 if (origin.getOriginType() != CommandOriginType::DedicatedServer)
-                    return output.error("非控制台不可添加/删除玩家权限。");
+                    return output.error("commands.generic.unknown", {CommandOutputParameter(runCommandTemp)});
                 if (result.player.results(origin).empty()) return output.error("未选择玩家。");
                 for (auto* player : result.player.results(origin)) {
                     switch (result.action) {
@@ -89,6 +102,7 @@ void registerCommands() {
                             output.error("玩家 {} 已拥有权限。", player->getRealName());
                         } else {
                             config.permPlayers.push_back(player->getUuid());
+                            ll::service::getCommandRegistry()->serializeAvailableCommands().sendTo(*player);
                             output.success("玩家 {} 添加权限成功。", player->getRealName());
                         }
                         break;
@@ -101,6 +115,7 @@ void registerCommands() {
                                 std::remove(config.permPlayers.begin(), config.permPlayers.end(), player->getUuid()),
                                 config.permPlayers.end()
                             );
+                            ll::service::getCommandRegistry()->serializeAvailableCommands().sendTo(*player);
                             output.success("玩家 {} 删除权限成功。", player->getRealName());
                         }
                         break;

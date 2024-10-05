@@ -8,7 +8,9 @@
 #include <mc/common/wrapper/InteractionResult.h>
 #include <mc/deps/core/common/bedrock/LevelSoundManager.h>
 #include <mc/deps/raknet/RNS2_Windows_Linux_360.h>
+#include <mc/network/packet/AvailableCommandsPacket.h>
 #include <mc/deps/raknet/SystemAddress.h>
+#include <mc/network/NetworkSystem.h>
 #include <mc/entity/components/PushableComponent.h>
 #include <mc/world/events/gameevents/VibrationListener.h>
 #include <mc/entity/utilities/ActorCollision.h>
@@ -904,6 +906,7 @@ LL_TYPE_INSTANCE_HOOK(
     origin(owner, other, pushSelfOnly);
 }
 
+// 兼容高亮显示
 LL_STATIC_HOOK(
     IsPickableHook,
     HookPriority::Normal,
@@ -920,6 +923,7 @@ LL_STATIC_HOOK(
     return origin(context);
 }
 
+// 幽匿感测体尝试震动
 LL_TYPE_INSTANCE_HOOK(
     VibrationHook,
     HookPriority::Normal,
@@ -935,6 +939,7 @@ LL_TYPE_INSTANCE_HOOK(
     return origin(region);
 }
 
+// 幽匿感测体请求震动粒子
 LL_TYPE_INSTANCE_HOOK(
     VibrationSpawnParticleHook,
     HookPriority::Normal,
@@ -950,6 +955,47 @@ LL_TYPE_INSTANCE_HOOK(
         && config.playerConfigs[static_cast<Player*>(entity)->getUuid()].enabled)
         return;
     origin(region, pos, a3);
+}
+
+// 命令隐藏
+LL_AUTO_TYPE_INSTANCE_HOOK(
+    NetworkSystemSendHook,
+    HookPriority::Normal,
+    NetworkSystem,
+    &NetworkSystem::send,
+    void,
+    NetworkIdentifier const& source,
+    Packet const&            packet,
+    SubClientId              subClientId
+) {
+    if (packet.isValid() && packet.getId() == MinecraftPacketIds::AvailableCommands) {
+        auto& pkt = (AvailableCommandsPacket&)packet;
+        for (auto& cmd : pkt.mCommands) {
+            if (cmd.name == config.command || cmd.name == config.alias) {
+                cmd.overloads.clear();
+            }
+        }
+        if (auto* player = ll::service::getServerNetworkHandler()->_getServerPlayer(source, subClientId);
+            player != nullptr) {
+            // clang-format off
+            if (!(
+                (!config.permMode && player->isOperator())
+                || (
+                    config.permMode
+                    && std::count(config.permPlayers.begin(), config.permPlayers.end(), player->getUuid()) != 0
+                )
+            )) {
+                // clang-format on
+                std::vector<AvailableCommandsPacket::CommandData> newCommands;
+                for (auto& cmd : pkt.mCommands) {
+                    if (cmd.name != config.command && cmd.name != config.alias)
+                        newCommands.emplace_back(std::move(cmd));
+                }
+                pkt.mCommands = std::move(newCommands);
+            }
+        }
+    }
+    origin(source, packet, subClientId);
 }
 
 struct Impl {
