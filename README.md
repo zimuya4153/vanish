@@ -135,6 +135,6 @@ void registerCmd() {
 - 最终花了一周的时间，完成了重构，有了现在的隐身2.0版本
 
 # 致谢名单
-- 感谢[出众年华](https://github.com/luckyoldboy)帮我找bug o(TωT)o 
+- 感谢[出众年华](https://github.com/luckyoldboy),[浪潮](https://github.com/lc655254)帮我找bug o(TωT)o 
 - 感谢[Ovila](https://github.com/MAUVE1NE),[刀佬](https://github.com/smartcmd),[Killcerr](https://github.com/killcerr),帮助我编写这个插件。
 - 感谢项目[LeviLamina](https://github.com/LiteLDev/LeviLamina),[EndstoneMC](https://github.com/EndstoneMC/endstone),[GMLIB](https://github.com/GroupMountain/GMLIB)

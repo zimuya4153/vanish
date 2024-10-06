@@ -8,15 +8,14 @@
 #include <mc/common/wrapper/InteractionResult.h>
 #include <mc/deps/core/common/bedrock/LevelSoundManager.h>
 #include <mc/deps/raknet/RNS2_Windows_Linux_360.h>
-#include <mc/network/packet/AvailableCommandsPacket.h>
 #include <mc/deps/raknet/SystemAddress.h>
-#include <mc/network/NetworkSystem.h>
 #include <mc/entity/components/PushableComponent.h>
-#include <mc/world/events/gameevents/VibrationListener.h>
 #include <mc/entity/utilities/ActorCollision.h>
+#include <mc/network/NetworkSystem.h>
 #include <mc/network/ServerNetworkHandler.h>
 #include <mc/network/packet/AddActorBasePacket.h>
 #include <mc/network/packet/AnvilDamagePacket.h>
+#include <mc/network/packet/AvailableCommandsPacket.h>
 #include <mc/network/packet/InventorySlotPacket.h>
 #include <mc/network/packet/PlayerActionPacket.h>
 #include <mc/network/packet/PlayerListPacket.h>
@@ -40,6 +39,7 @@
 #include <mc/world/actor/player/PlayerListPacketType.h>
 #include <mc/world/actor/player/ServerPlayerBlockUseHandler.h>
 #include <mc/world/containers/ContainerID.h>
+#include <mc/world/events/gameevents/VibrationListener.h>
 #include <mc/world/gamemode/GameMode.h>
 #include <mc/world/inventory/network/ItemStackRequestAction.h>
 #include <mc/world/inventory/network/ItemStackRequestActionHandler.h>
@@ -187,7 +187,7 @@ LL_TYPE_INSTANCE_HOOK(
     ll::service::getLevel()->forEachPlayer([&playerNameList, &playerCount, &first](Player& player) -> bool {
         if (!config.playerConfigs[player.getUuid()].enabled) {
             if (!first) playerNameList += ", ";
-            first = false;
+            first           = false;
             playerNameList += player.getRealName();
             playerCount++;
         }
@@ -325,7 +325,7 @@ LL_TYPE_INSTANCE_HOOK(PlayerCanSleepHook, HookPriority::Normal, Player, &Player:
     return config.playerConfigs[getUuid()].enabled ? false : origin();
 }
 
-// 玩家捡起物品
+// 玩家捡起物品/投射物
 LL_TYPE_INSTANCE_HOOK(
     PlayerTakeItemHook,
     HookPriority::Normal,
@@ -336,8 +336,7 @@ LL_TYPE_INSTANCE_HOOK(
     int    orgCount,
     int    favoredSlot
 ) {
-    return itemActor.hasCategory(ActorCategory::Item) && config.playerConfigs[getUuid()].enabled
-                && config.playerConfigs[getUuid()].vanishNoTakeItem
+    return config.playerConfigs[getUuid()].enabled && config.playerConfigs[getUuid()].vanishNoTakeItem
              ? false
              : origin(itemActor, orgCount, favoredSlot);
 }
@@ -573,10 +572,10 @@ LL_TYPE_INSTANCE_HOOK(
     Dimension,
     &Dimension::fetchNearestPlayer,
     Player*,
-    Vec3 const&                              pos,
-    float                                    maxDist,
-    bool                                     a3,
-    std::function<bool(class Player const&)> func
+    Vec3 const&                        pos,
+    float                              maxDist,
+    bool                               a3,
+    std::function<bool(Player const&)> func
 ) {
     return origin(pos, maxDist, a3, [&func](Player const& player) -> bool {
         return config.playerConfigs[player.getUuid()].enabled ? false : func(player);
@@ -906,7 +905,7 @@ LL_TYPE_INSTANCE_HOOK(
     origin(owner, other, pushSelfOnly);
 }
 
-// 兼容高亮显示
+// 兼容高亮显示|修复钓鱼竿勾中问题
 LL_STATIC_HOOK(
     IsPickableHook,
     HookPriority::Normal,
@@ -958,7 +957,7 @@ LL_TYPE_INSTANCE_HOOK(
 }
 
 // 命令隐藏
-LL_AUTO_TYPE_INSTANCE_HOOK(
+LL_TYPE_INSTANCE_HOOK(
     NetworkSystemSendHook,
     HookPriority::Normal,
     NetworkSystem,
@@ -1051,7 +1050,8 @@ struct Impl {
         PushableComponentPushHook2,
         IsPickableHook,
         VibrationHook,
-        VibrationSpawnParticleHook>
+        VibrationSpawnParticleHook,
+        NetworkSystemSendHook>
         hook;
 };
 

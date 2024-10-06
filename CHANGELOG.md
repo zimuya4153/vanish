@@ -2,6 +2,8 @@
 
 ## 2.0.4
 - 修复list命令问题
+- 修改命令相关逻辑
+- 修复会捡起玩家投射物的问题
 
 ## 2.0.3
 - 兼容[高亮显示](https://https://github.com/zimuya4153/LSE_Waila)
