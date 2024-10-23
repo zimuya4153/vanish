@@ -64,7 +64,8 @@ void setPlayerBossbar(Player& player, bool enabled) {
         removeBossbarPacket.sendTo(player);
 
         // 移除bossbar创建的假实体
-        RemoveActorPacket(ActorUniqueID(config.bossbarID)).sendTo(player);
+        if (!ll::service::getLevel()->fetchEntity(ActorUniqueID(config.bossbarID)))
+            RemoveActorPacket(ActorUniqueID(config.bossbarID)).sendTo(player);
     }
 }
 

@@ -17,7 +17,6 @@ static std::unique_ptr<Entry> instance;
 Entry& Entry::getInstance() { return *instance; }
 
 bool Entry::load() {
-    logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "Loading..."));
     auto path = getSelf().getConfigDir() / "config.json";
     try {
         ll::config::loadConfig(config, path);
@@ -38,10 +37,9 @@ bool Entry::load() {
 }
 
 bool Entry::enable() {
-    logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "Enableing..."));
     registerCommands();
     HookCall(true);
-    if (config.enabledPAPI) PAPICall(true);
+    if (config.enabledPAPI) PapiCall(true);
     logger.info(fmt::format(
         fmt::fg(fmt::color::aqua),
         "欢迎使用隐身模组，如有问题，请加Q群(985991178)反馈或前往github提交issues。"
@@ -52,16 +50,12 @@ bool Entry::enable() {
 }
 
 bool Entry::disable() {
-    logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "Disableing..."));
-    if (config.enabledPAPI) PAPICall(false);
+    if (config.enabledPAPI) PapiCall(false);
     HookCall(false);
     return true;
 }
 
-bool Entry::unload() {
-    logger.debug(fmt::format(fmt::fg(fmt::color::light_green), "Unloading..."));
-    return true;
-}
+bool Entry::unload() { return true; }
 
 } // namespace Vanish
 
